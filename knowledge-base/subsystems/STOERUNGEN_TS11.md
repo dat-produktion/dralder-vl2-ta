@@ -9,9 +9,9 @@ review_notes: ""
 ---
 
 ## Machine Data
-- **Manufacturer**: ZVI
+- **Manufacturer**: ZVT
 - **Model**: N1/012/PAC/001 — integrated machine (sections 11/12/13 share control)
-- **HMI**: Vintek (shared across ZVI sections)
+- **HMI**: Vintek (shared across ZVT sections)
 - **Glue**: Nordson ProBlue 7 hot-melt, 160-180°C
 - **Cardboard**: External print supplier, 1000+ blank magazine capacity
 - **Tray format**: 6 cans (3×2 grid)
@@ -19,8 +19,8 @@ review_notes: ""
 
 ## Known Anomalies / Flags
 - #1 MOST FREQUENT FAULT ON LINE per operator
-- Integrated ZVI: faults cascade to FOL (12) and STU (13)
-- Beam Blocker sensitivity adjusted — further changes require Vintek/ZVI access
+- Integrated ZVT: faults cascade to FOL (12) and STU (13)
+- Beam Blocker sensitivity adjusted — further changes require Vintek/ZVT access
 - Cardboard supplier external — supplier change can introduce blank dimension drift
 
 # Mechanical
@@ -72,13 +72,13 @@ review_notes: ""
 # Function / Control
 
 ## PLC program (interlocks, sequences)
-- Vintek controller: ZVI-proprietary logic
+- Vintek controller: ZVT-proprietary logic
 - [OUTSTANDING — S7 export required]
-- Beam Blocker trip: stops ZVI section only (not whole line)
+- Beam Blocker trip: stops ZVT section only (not whole line)
 
 ## HMI (display, operation)
 - Vintek HMI: tray packer status, glue temp, alarm codes
-- Line HMI: ZVI section stopped flag
+- Line HMI: ZVT section stopped flag
 
 ## Communication with neighboring systems
 - Upstream: AGG (10) — 6-can grid release

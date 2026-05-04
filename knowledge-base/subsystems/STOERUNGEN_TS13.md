@@ -9,7 +9,7 @@ review_notes: ""
 ---
 
 ## Machine Data
-- **Manufacturer**: ZVI (integrated with TRP 11, FOL 12)
+- **Manufacturer**: ZVT (integrated with TRP 11, FOL 12)
 - **Model**: N1/012/PAC/001 — shrink tunnel section
 - **Type**: Convection heat shrink tunnel
 - **Belt**: Stainless steel mesh
@@ -66,7 +66,7 @@ review_notes: ""
 
 ## PLC program (interlocks, sequences)
 [OUTSTANDING — S7 export required]
-- Temperature alarm: stops ZVI section
+- Temperature alarm: stops ZVT section
 - Belt underspeed: tray dwell too long → burn
 
 ## HMI (display, operation)

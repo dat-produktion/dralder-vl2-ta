@@ -9,14 +9,14 @@ review_notes: ""
 ---
 
 ## Machine Data
-- **Manufacturer**: ZVI (integrated with TRP 11, STU 13)
+- **Manufacturer**: ZVT (integrated with TRP 11, STU 13)
 - **Model**: N1/012/PAC/001 — film wrap section
 - **Film**: Continuous roll, 2-5 changes per shift
 - **Sealing**: Pneumatic sealing bar
 
 ## Known Anomalies / Flags
 - #3 most frequent fault on line
-- Integrated ZVI — fault stops TRP (11) and STU (13) too
+- Integrated ZVT — fault stops TRP (11) and STU (13) too
 - SAFETY: waste film accumulation interferes with mechanism — clear at every roll change
 - White film guide drum is large and visible — operator reference for roll depletion
 
@@ -71,11 +71,11 @@ review_notes: ""
 
 ## HMI (display, operation)
 - Vintek HMI: sealing bar temp, film-out alarm
-- Line HMI: ZVI section stopped
+- Line HMI: ZVT section stopped
 
 ## Communication with neighboring systems
 - Upstream: TRP (11)
-- Internal: shared ZVI control
+- Internal: shared ZVT control
 - Downstream: STU (13) shrink tunnel
 
 ## Recipes and parameters

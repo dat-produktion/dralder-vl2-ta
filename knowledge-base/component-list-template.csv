@@ -6,6 +6,6 @@ VL2.06.M.002,06,DNW,M,002,,Exit brush drive motor,BMH enclosure right side,,,KNO
 VL2.06.SL.001,06,DNW,SL,001,,Orange entry sensor,DNW entry chute,,,KNOWLEDGE PENDING
 VL2.07.HMI.001,07,DRU,HMI,001,,Videojet 1880+ controller,Standalone console,,,KNOWLEDGE PENDING
 VL2.09.V.001,09,DPA,V,001,,Nordson ProBlue 7 glue nozzle primary,Tray packer glue station,,,KNOWLEDGE PENDING
-VL2.09.HMI.001,09,DPA,HMI,001,,Vintek HMI controller,ZVI main cabinet,,,KNOWLEDGE PENDING
+VL2.09.HMI.001,09,DPA,HMI,001,,Vintek HMI controller,ZVT main cabinet,,,KNOWLEDGE PENDING
 VL2.12.HMI.001,12,TBE,HMI,001,,Eidos Printess 4e controller,Eidos unit front panel,,,KNOWLEDGE PENDING
 VL2.12.SL.001,12,TBE,SL,001,,Orange photoelectric trigger sensor,Riser conveyor exit,,,KNOWLEDGE PENDING

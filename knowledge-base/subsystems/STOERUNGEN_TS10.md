@@ -10,7 +10,7 @@ review_notes: ""
 
 ## Machine Data
 - **Type**: 3-column pneumatic accumulator — collects single-file cans, releases 6 cans (3×2 grid) to TRP
-- **Manufacturer**: Unknown (likely ZVI integrated)
+- **Manufacturer**: Unknown (likely ZVT integrated)
 - **Sensors**: 4x photoelectric staging sensors
 - **Output**: 6-can grid (3 columns × 2 rows) per release to tray packer
 

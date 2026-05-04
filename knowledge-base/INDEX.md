@@ -13,7 +13,7 @@ Load only what is needed. Maximum 4 files per request.
 GROUP A — PALLET INFEED          (01 AUF → 02 FBZ → 03 ROB → 04 WMK)
 GROUP B — SINGULATION            (05 DRE → 06 SNG)
 GROUP C — SINGLE-FILE PROCESSING (07 DRU → 08 DNW → 09 LBL)
-GROUP D — ZVI INTEGRATED MACHINE (10 AGG → 11 TRP → 12 FOL → 13 STU)
+GROUP D — ZVT INTEGRATED MACHINE (10 AGG → 11 TRP → 12 FOL → 13 STU)
 GROUP E — TRAY OUTPUT            (14 TBE → 15 SEL → 16 ZUO)
 GROUP F — PALLETIZING (PARALLEL) (17 PAL3 → 18 EX3 | 19 PAL2 → 20 EX2)
 ```
@@ -82,7 +82,7 @@ GROUP F — PALLETIZING (PARALLEL) (17 PAL3 → 18 EX3 | 19 PAL2 → 20 EX2)
 - **Key terms**: Langguth, hotLAN, rotary labeler, paper label, pre-cut sheet, glue dot, Nordson 3100
 - **Known issues**: #2 most frequent fault. Operator root cause: deformed cans (upstream issue) — NOT labeler malfunction
 
-### GROUP D — ZVI Integrated Machine
+### GROUP D — ZVT Integrated Machine
 
 ### VL2.10 — AGG — Aggregator
 - **Fault file**: `subsystems/STOERUNGEN_TS10.md`
@@ -92,19 +92,19 @@ GROUP F — PALLETIZING (PARALLEL) (17 PAL3 → 18 EX3 | 19 PAL2 → 20 EX2)
 
 ### VL2.11 — TRP — Tray Packer
 - **Fault file**: `subsystems/STOERUNGEN_TS11.md`
-- **Manufacturer / Model**: ZVI N1/012/PAC/001 + Nordson ProBlue 7 (160-180°C) + Vintek HMI
-- **Key terms**: ZVI, rotary packer, tray, cardboard blank, vacuum cup, Nordson ProBlue 7, Vintek HMI, Beam Blocker, 6-can tray
+- **Manufacturer / Model**: ZVT N1/012/PAC/001 + Nordson ProBlue 7 (160-180°C) + Vintek HMI
+- **Key terms**: ZVT, rotary packer, tray, cardboard blank, vacuum cup, Nordson ProBlue 7, Vintek HMI, Beam Blocker, 6-can tray
 - **Known issues**: #1 MOST FREQUENT FAULT ON LINE. Beam Blocker sensitivity adjusted. Cardboard supplier external.
 
 ### VL2.12 — FOL — Film Wrapper
 - **Fault file**: `subsystems/STOERUNGEN_TS12.md`
-- **Manufacturer / Model**: ZVI integrated section
+- **Manufacturer / Model**: ZVT integrated section
 - **Key terms**: film wrapper, sealing bar, white film drum, 2-5 roll changes per shift, bird-nesting
 - **Known issues**: #3 most frequent fault. Waste film accumulation interferes — clear at every roll change.
 
 ### VL2.13 — STU — Shrink Tunnel
 - **Fault file**: `subsystems/STOERUNGEN_TS13.md`
-- **Manufacturer / Model**: ZVI integrated section
+- **Manufacturer / Model**: ZVT integrated section
 - **Key terms**: shrink tunnel, mesh belt, blower, heating elements, exhaust, LOTO
 - **Known issues**: HIGH VOLTAGE + HOT SURFACE — LOTO MANDATORY. OEM manual outstanding for parameters.
 
@@ -193,20 +193,20 @@ GROUP F — PALLETIZING (PARALLEL) (17 PAL3 → 18 EX3 | 19 PAL2 → 20 EX2)
 - **Manual (kb summary)**: `manuals/VL2_09_Langguth_Nordson_kb.md` — [OUTSTANDING]
 - **Load when**: label adhesion fault, glue temperature alarm, carrier belt issue
 
-#### VL2.11 — TRP — ZVI N1/012/PAC/001 + Nordson ProBlue 7
-- **Manual (raw)**: `manuals/raw/VL2_11_ZVI_TRP_operation.pdf` — [OUTSTANDING]
+#### VL2.11 — TRP — ZVT N1/012/PAC/001 + Nordson ProBlue 7
+- **Manual (raw)**: `manuals/raw/VL2_11_ZVT_TRP_operation.pdf` — [OUTSTANDING]
 - **Manual (raw)**: `manuals/raw/VL2_11_Nordson_ProBlue7_service.pdf` — [OUTSTANDING]
-- **Manual (kb summary)**: `manuals/VL2_11_ZVI_TRP_kb.md` — [OUTSTANDING]
+- **Manual (kb summary)**: `manuals/VL2_11_ZVT_TRP_kb.md` — [OUTSTANDING]
 - **Load when**: tray packer fault, cardboard blank misfeed, glue fault, Beam Blocker
 
-#### VL2.12 — FOL — ZVI Film Wrapper
-- **Manual (raw)**: `manuals/raw/VL2_12_ZVI_FOL_operation.pdf` — [OUTSTANDING, same OEM as TRP]
-- **Manual (kb summary)**: `manuals/VL2_12_ZVI_FOL_kb.md` — [OUTSTANDING]
+#### VL2.12 — FOL — ZVT Film Wrapper
+- **Manual (raw)**: `manuals/raw/VL2_12_ZVT_FOL_operation.pdf` — [OUTSTANDING, same OEM as TRP]
+- **Manual (kb summary)**: `manuals/VL2_12_ZVT_FOL_kb.md` — [OUTSTANDING]
 - **Load when**: film tear, sealing bar fault, bird-nesting
 
-#### VL2.13 — STU — ZVI Shrink Tunnel
-- **Manual (raw)**: `manuals/raw/VL2_13_ZVI_STU_operation.pdf` — [OUTSTANDING, LOTO params critical]
-- **Manual (kb summary)**: `manuals/VL2_13_ZVI_STU_kb.md` — [OUTSTANDING]
+#### VL2.13 — STU — ZVT Shrink Tunnel
+- **Manual (raw)**: `manuals/raw/VL2_13_ZVT_STU_operation.pdf` — [OUTSTANDING, LOTO params critical]
+- **Manual (kb summary)**: `manuals/VL2_13_ZVT_STU_kb.md` — [OUTSTANDING]
 - **Load when**: temperature alarm, mesh belt fault, any thermal fault — LOTO first
 
 #### VL2.14 — TBE — Eidos Printess 4e

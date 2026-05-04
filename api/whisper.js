@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     const form = new FormData();
     form.append('file', blob, `audio.${ext}`);
     form.append('model', 'whisper-1');
-    form.append('prompt', 'Verpackungslinie, Förderband, Sensor, Palette, Roboter, Greifer, Etikettierer, Folienwickler, Palettierer, Frequenzumrichter, SPS, Störung, Alarm, Vintek, Nordson, ZVI, Fanuc, Videojet, Langguth, Eidos. Packaging line, conveyor, sensor, pallet, robot, gripper, labeler, film wrapper, palletizer, VFD, PLC, fault, alarm.');
+    form.append('prompt', 'Verpackungslinie, Förderband, Sensor, Palette, Roboter, Greifer, Etikettierer, Folienwickler, Palettierer, Frequenzumrichter, SPS, Störung, Alarm, Vintek, Nordson, ZVT, Fanuc, Videojet, Langguth, Eidos. Packaging line, conveyor, sensor, pallet, robot, gripper, labeler, film wrapper, palletizer, VFD, PLC, fault, alarm.');
     form.append('language', language === 'en' ? 'en' : 'de');
 
     const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {

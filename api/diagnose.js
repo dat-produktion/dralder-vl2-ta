@@ -35,11 +35,11 @@ GROUP C — Single-File Processing:
 08 DNW   Can inverter — BMH Bahn W2001 (SINGLE flip, internal path NOT visible)
 09 LBL   Rotary labeler — Langguth hotLAN + Nordson 3100 glue (#2 most frequent fault)
 
-GROUP D — ZVI Integrated Machine (sections 10-13 share Vintek HMI + control):
+GROUP D — ZVT Integrated Machine (sections 10-13 share Vintek HMI + control):
 10 AGG   Aggregator (3-column accumulator, releases 6-can grid to TRP)
-11 TRP   Tray packer — ZVI N1/012/PAC/001 + Nordson ProBlue 7 (#1 MOST FREQUENT FAULT ON LINE)
-12 FOL   Film wrapper — ZVI integrated (#3 most frequent fault)
-13 STU   Shrink tunnel — ZVI integrated (HIGH VOLTAGE + HOT SURFACE — LOTO MANDATORY)
+11 TRP   Tray packer — ZVT N1/012/PAC/001 + Nordson ProBlue 7 (#1 MOST FREQUENT FAULT ON LINE)
+12 FOL   Film wrapper — ZVT integrated (#3 most frequent fault)
+13 STU   Shrink tunnel — ZVT integrated (HIGH VOLTAGE + HOT SURFACE — LOTO MANDATORY)
 
 GROUP E — Tray Output:
 14 TBE   Tray labeler + cooling riser — Eidos Printess 4e (⚠ WAX ribbon currently loaded — RESIN required for shrink film)
@@ -92,11 +92,11 @@ GRUPPE C — Einzelreihen-Verarbeitung:
 08 DNW   Dosenwender — BMH Bahn W2001 (EINZELDREHUNG, Innenpfad NICHT sichtbar)
 09 LBL   Etikettiermaschine — Langguth hotLAN + Nordson 3100 Kleber (#2 häufigster Fehler)
 
-GRUPPE D — ZVI-Integrierte Maschine (Abschnitte 10-13 teilen Vintek-HMI + Steuerung):
+GRUPPE D — ZVT-Integrierte Maschine (Abschnitte 10-13 teilen Vintek-HMI + Steuerung):
 10 AGG   Aggregator (3-spaltiger Speicher, Freigabe von 6-Dosen-Raster an TRP)
-11 TRP   Tray-Packer — ZVI N1/012/PAC/001 + Nordson ProBlue 7 (#1 HÄUFIGSTER FEHLER DER LINIE)
-12 FOL   Folienwickler — ZVI integriert (#3 häufigster Fehler)
-13 STU   Schrumpftunnel — ZVI integriert (HOCHSPANNUNG + HEISSE OBERFLÄCHE — LOTO ZWINGEND)
+11 TRP   Tray-Packer — ZVT N1/012/PAC/001 + Nordson ProBlue 7 (#1 HÄUFIGSTER FEHLER DER LINIE)
+12 FOL   Folienwickler — ZVT integriert (#3 häufigster Fehler)
+13 STU   Schrumpftunnel — ZVT integriert (HOCHSPANNUNG + HEISSE OBERFLÄCHE — LOTO ZWINGEND)
 
 GRUPPE E — Tray-Ausgabe:
 14 TBE   Tray-Etikettierer + Kühlsteigförderer — Eidos Printess 4e (⚠ WAX-Band derzeit geladen — RESIN für Schrumpffolie erforderlich)

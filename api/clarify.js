@@ -10,7 +10,7 @@ export const config = { maxDuration: 30 };
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SUBSYSTEMS = `01 AUF Pallet loading | 02 FBZ Pallet conveyor | 03 ROB Fanuc S-420 robot | 04 WMK Wiremesh conveyor | 05 DRE Rotary table | 06 SNG Singulator | 07 DRU Videojet 1880+ printer | 08 DNW BMH can inverter | 09 LBL Langguth labeler + Nordson 3100 (#2 fault) | 10 AGG Aggregator | 11 TRP ZVI tray packer + Nordson ProBlue 7 (#1 fault) | 12 FOL ZVI film wrapper (#3 fault) | 13 STU ZVI shrink tunnel (LOTO) | 14 TBE Eidos Printess 4e tray labeler | 15 SEL Screw elevator | 16 ZUO Allocation station | 17 PAL3 Palletizer 3 | 18 EX3 Exit 3 | 19 PAL2 Palletizer 2 | 20 EX2 Exit 2`;
+const SUBSYSTEMS = `01 AUF Pallet loading | 02 FBZ Pallet conveyor | 03 ROB Fanuc S-420 robot | 04 WMK Wiremesh conveyor | 05 DRE Rotary table | 06 SNG Singulator | 07 DRU Videojet 1880+ printer | 08 DNW BMH can inverter | 09 LBL Langguth labeler + Nordson 3100 (#2 fault) | 10 AGG Aggregator | 11 TRP ZVT tray packer + Nordson ProBlue 7 (#1 fault) | 12 FOL ZVT film wrapper (#3 fault) | 13 STU ZVT shrink tunnel (LOTO) | 14 TBE Eidos Printess 4e tray labeler | 15 SEL Screw elevator | 16 ZUO Allocation station | 17 PAL3 Palletizer 3 | 18 EX3 Exit 3 | 19 PAL2 Palletizer 2 | 20 EX2 Exit 2`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
