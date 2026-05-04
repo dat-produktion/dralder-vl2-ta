@@ -7,7 +7,7 @@
 //              language ('EN'|'DE') }
 
 import Anthropic from '@anthropic-ai/sdk';
-import { getObjectText, getObjectBase64 } from './_storage.js';
+import { getObjectText, getObjectBase64, putObject } from './_storage.js';
 
 export const config = { maxDuration: 60 };
 
@@ -148,6 +148,7 @@ export default async function handler(req, res) {
   catch { return res.status(400).json({ error: 'Invalid JSON body' }); }
 
   // Accept both new (frontend) and legacy field names
+  const errorId              = body.error_id || null;
   const subsystemRaw         = body.subsystem;
   const problemDescription   = body.problemDescription;
   const labelNumber          = body.labelNumber;
@@ -170,6 +171,19 @@ export default async function handler(req, res) {
 
   const isFollowup = conversationHistory.length > 0;
   const lang = language === 'EN' ? 'EN' : 'DE';
+
+  // Fire-and-forget: persist diagnostic photos to Hetzner under photos/<errorId>/diag-<seq>.<ext>.
+  // Does NOT block the Claude call; failures are logged but don't fail the response.
+  if (errorId && photos.length > 0) {
+    photos.forEach((p, idx) => {
+      try {
+        const ext = (p.mediaType || 'image/jpeg').split('/')[1] || 'jpg';
+        const key = `photos/${errorId}/diag-${String(idx+1).padStart(2,'0')}.${ext}`;
+        putObject(key, Buffer.from(p.base64, 'base64'), p.mediaType || 'image/jpeg')
+          .catch(e => console.warn('diagnose photo save failed', key, e.message));
+      } catch (e) { console.warn('diagnose photo prep failed', e.message); }
+    });
+  }
 
   try {
     // ----------------------------------------------------------------

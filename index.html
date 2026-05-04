@@ -366,6 +366,7 @@
           <div class="ph-id" id="phId">VL2.00</div>
           <div class="ph-name" id="phName">Subsystem</div>
           <div class="ph-machine" id="phMachine">—</div>
+          <div id="errorIdBadge" style="display:none;font-size:10px;font-weight:700;color:#fff;background:var(--burg);padding:3px 8px;border-radius:4px;letter-spacing:.5px;margin-top:4px;align-self:flex-start;"></div>
         </div>
         <button class="panel-close" onclick="closePanel()">✕</button>
       </div>
@@ -810,6 +811,9 @@ const I18N = {
 let lang = 'DE';
 let activeBlock = null;
 let lineState = null;
+let currentErrorId       = null;   // DDMMYYYY-NNN — set on first triage/diagnose, cleared on resolve or after fix-not-reported log
+let diagnosisCompleted   = false;  // becomes true after a successful /api/diagnose call
+let resolutionRecorded   = false;  // becomes true after /api/resolve OR fix-not-reported /api/log call
 let selectedSymptoms = new Set();
 let uploadedImages = []; // {data, mime, name, b64}
 let triageImages = [];
@@ -819,6 +823,91 @@ let lastDiagnosis = null;
 let voiceTarget = null; // 'triage' | 'fault' | 'followup' | 'resolve'
 let mediaRecorder = null;
 let audioChunks = [];
+
+// ============================================================================
+// ERROR ID — every fault session gets a unique ID DDMMYYYY-NNN
+// ============================================================================
+function generateErrorId(){
+  const now  = new Date();
+  const dd   = String(now.getDate()).padStart(2,'0');
+  const mm   = String(now.getMonth()+1).padStart(2,'0');
+  const yyyy = now.getFullYear();
+  const secs = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
+  const nnn  = String((secs + Math.floor(Math.random()*100)) % 1000).padStart(3,'0');
+  return `${dd}${mm}${yyyy}-${nnn}`;
+}
+function ensureErrorId(){
+  if(!currentErrorId){
+    currentErrorId     = generateErrorId();
+    diagnosisCompleted = false;
+    resolutionRecorded = false;
+    updateErrorIdBadge();
+  }
+  return currentErrorId;
+}
+function updateErrorIdBadge(){
+  const el = document.getElementById('errorIdBadge');
+  if(!el) return;
+  if(currentErrorId){
+    el.textContent = (lang==='DE'?'Fall: ':'Case: ') + currentErrorId;
+    el.style.display = 'inline-block';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+}
+function clearErrorIdState(){
+  currentErrorId     = null;
+  diagnosisCompleted = false;
+  resolutionRecorded = false;
+  updateErrorIdBadge();
+}
+// Auto-log "fix not reported" when operator walks away from a diagnosed fault.
+async function maybeLogFixNotReported(){
+  if(!currentErrorId || !diagnosisCompleted || resolutionRecorded) return;
+  resolutionRecorded = true;   // set before fetch so reentrant calls are safe
+  const symptomList = Array.from(selectedSymptoms || []).filter(s => s !== '__SOMETHING_ELSE__');
+  const payload = {
+    error_id:       currentErrorId,
+    subsystem:      activeBlock ? 'VL2.'+activeBlock : null,
+    line_state:     lineState,
+    symptoms:       symptomList,
+    operator_notes: document.getElementById('faultNotes')?.value || '',
+    fault_images:   uploadedImages.map(i => ({b64:i.b64, mime:i.mime})),
+    solved:         false,
+    status:         'fix_not_reported',
+    language:       lang,
+    timestamp:      new Date().toISOString()
+  };
+  try {
+    await fetch(CONFIG.LOG_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+      keepalive: true
+    });
+  } catch(e){ console.warn('fix_not_reported log failed', e); }
+}
+// Best-effort beacon for tab close / page unload.
+window.addEventListener('beforeunload', () => {
+  if(!currentErrorId || !diagnosisCompleted || resolutionRecorded) return;
+  resolutionRecorded = true;
+  const symptomList = Array.from(selectedSymptoms || []).filter(s => s !== '__SOMETHING_ELSE__');
+  const payload = {
+    error_id:       currentErrorId,
+    subsystem:      activeBlock ? 'VL2.'+activeBlock : null,
+    line_state:     lineState,
+    symptoms:       symptomList,
+    operator_notes: document.getElementById('faultNotes')?.value || '',
+    solved:         false,
+    status:         'fix_not_reported',
+    language:       lang,
+    timestamp:      new Date().toISOString()
+  };
+  try {
+    navigator.sendBeacon(CONFIG.LOG_URL, new Blob([JSON.stringify(payload)], {type:'application/json'}));
+  } catch(e){}
+});
 
 // ============================================================================
 // LANGUAGE TOGGLE — fixes V7.0 bug where placeholders weren't refreshed
@@ -841,6 +930,8 @@ function applyLanguage(){
   document.getElementById('statusLine').textContent = t.statusLine;
   document.getElementById('statusKB').textContent = t.statusKB;
   document.getElementById('statusApi').textContent = t.statusApi;
+  // Refresh the error-id badge prefix in the new language
+  updateErrorIdBadge();
   // Triage card
   document.getElementById('triageTitle').textContent = t.triageTitle;
   document.getElementById('triageSub').textContent = t.triageSub;
@@ -1331,6 +1422,7 @@ async function runTriage(){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         mode:'triage',
+        error_id: ensureErrorId(),
         operator_text: notes,
         images: triageImages.map(i => ({b64:i.b64, mime:i.mime})),
         language: lang
@@ -1412,12 +1504,15 @@ async function runDiagnosis(){
   respText.innerHTML = `<div class="triage-loading"><div class="loading-dots"><span></span><span></span><span></span></div> ${t.respLoading}</div>`;
 
   try {
+    const errorId = ensureErrorId();
+
     // Call 1: clarify — get filesNeeded
     const clarifyResp = await fetch(CONFIG.CLARIFY_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         mode:'diagnose_prep',
+        error_id: errorId,
         subsystem: 'VL2.'+activeBlock,
         line_state: lineState,
         symptoms: symptomList,
@@ -1432,6 +1527,7 @@ async function runDiagnosis(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
+        error_id: errorId,
         subsystem: 'VL2.'+activeBlock,
         line_state: lineState,
         symptoms: symptomList,
@@ -1443,6 +1539,7 @@ async function runDiagnosis(){
     });
     const diagData = await diagResp.json();
     lastDiagnosis = diagData;
+    if(!diagData.error) diagnosisCompleted = true;
     conversationTurns = [
       { role:'user', text: `${symptomList.join(', ')}${notes?' — '+notes:''}` },
       { role:'assistant', text: diagData.summary || JSON.stringify(diagData) }
@@ -1582,6 +1679,7 @@ async function confirmResolve(){
 
   const symptomList = Array.from(selectedSymptoms).filter(s => s !== '__SOMETHING_ELSE__');
   const payload = {
+    error_id: ensureErrorId(),
     subsystem: 'VL2.'+activeBlock,
     line_state: lineState,
     symptoms: symptomList,
@@ -1611,6 +1709,8 @@ async function confirmResolve(){
     });
 
     closeResolveModal();
+    resolutionRecorded = true;       // resolve succeeded — block the auto-log
+    clearErrorIdState();             // ready for the next fault
     // Mark block resolved briefly, then close
     const blockEl = document.querySelector(`.block[onclick*="'${activeBlock}'"]`);
     if(blockEl) blockEl.classList.add('resolved');
@@ -1643,7 +1743,9 @@ function updateSteps(){
   document.getElementById('step4').classList.toggle('active', has2);
 }
 
-function closePanel(){
+async function closePanel(){
+  await maybeLogFixNotReported();
+  clearErrorIdState();
   activeBlock = null;
   document.getElementById('emptyState').style.display = 'flex';
   document.getElementById('faultForm').style.display = 'none';
@@ -1655,8 +1757,10 @@ function closePanel(){
   renderBlocks();
 }
 
-function resetForm(){
+async function resetForm(){
   if(activeBlock){
+    await maybeLogFixNotReported();
+    clearErrorIdState();
     selectedSymptoms.clear();
     uploadedImages = [];
     conversationTurns = [];
