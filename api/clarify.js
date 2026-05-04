@@ -1,8 +1,7 @@
 // api/clarify.js
-// Phase B2: First Claude call — reads INDEX.md only, decides which detail files to load.
-// Returns: { filesNeeded: string[], priorCaseFound: boolean, priorCaseSummary: string }
-// POST /api/clarify
-// Body JSON: { subsystem, problemDescription, labelNumber, photoDescriptions }
+// Two modes:
+//   mode='triage'        → operator_text/images only → returns { reply: "<short text>" }
+//   mode='diagnose_prep' → subsystem already chosen → returns { filesNeeded, priorCaseFound, priorCaseSummary }
 
 import Anthropic from '@anthropic-ai/sdk';
 import { getObjectText } from './_storage.js';
@@ -11,6 +10,8 @@ export const config = { maxDuration: 30 };
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+const SUBSYSTEMS = `01 AUF Pallet loading | 02 FBZ Pallet conveyor | 03 ROB Fanuc S-420 robot | 04 WMK Wiremesh conveyor | 05 DRE Rotary table | 06 SNG Singulator | 07 DRU Videojet 1880+ printer | 08 DNW BMH can inverter | 09 LBL Langguth labeler + Nordson 3100 (#2 fault) | 10 AGG Aggregator | 11 TRP ZVI tray packer + Nordson ProBlue 7 (#1 fault) | 12 FOL ZVI film wrapper (#3 fault) | 13 STU ZVI shrink tunnel (LOTO) | 14 TBE Eidos Printess 4e tray labeler | 15 SEL Screw elevator | 16 ZUO Allocation station | 17 PAL3 Palletizer 3 | 18 EX3 Exit 3 | 19 PAL2 Palletizer 2 | 20 EX2 Exit 2`;
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -18,72 +19,111 @@ export default async function handler(req, res) {
   try { body = JSON.parse(await readBody(req)); }
   catch { return res.status(400).json({ error: 'Invalid JSON body' }); }
 
-  const { subsystem, problemDescription, labelNumber, photoDescriptions = [] } = body;
-  if (!subsystem || !problemDescription) {
-    return res.status(400).json({ error: 'subsystem and problemDescription required' });
-  }
+  const mode = body.mode || 'diagnose_prep';
+  const lang = body.language === 'EN' ? 'EN' : 'DE';
 
   try {
-    // Load INDEX.md and the relevant STOERUNGEN fault file from object storage
-    const [indexMd, stoerMd] = await Promise.all([
-      getObjectText('INDEX.md'),
-      getObjectText(`subsystems/STOERUNGEN_TS${String(subsystem).padStart(2,'0')}.md`).catch(() => '')
-    ]);
-
-    const systemPrompt = `You are the steering intelligence for a packaging line diagnostic agent at Dr. Alder Tiernahrung GmbH — Line 2 (VL2). 
-
-Your task at this stage is NOT to diagnose. Your task is to:
-1. Read INDEX.md to understand which knowledge files exist in the knowledge base.
-2. Read the most recent fault log for this subsystem.
-3. Decide which additional files would be most useful for diagnosis.
-4. Check whether a similar case has been documented before.
-
-Respond ONLY with valid JSON in this exact schema:
-{
-  "filesNeeded": ["path/to/file1.md", "path/to/file2.pdf"],
-  "priorCaseFound": true,
-  "priorCaseSummary": "Brief description of the most similar prior case, or empty string if none"
-}
-
-Rules:
-- filesNeeded: list 0-2 file paths from INDEX.md that are relevant. Empty array if the STOERUNGEN fault log alone is sufficient.
-- ONLY request files whose path ends in _kb.md or _alarms.md. These are lean summaries safe for live diagnosis.
-- NEVER request files under manuals/raw/ (full OEM PDFs — far too expensive for live operator use) or under diagrams/ (wiring diagrams — load offline only).
-- Hard cap: maximum 2 files per call. Token budget is tight; pick the most decisive ones.
-- priorCaseSummary: one sentence max. Empty string if no prior case found.
-- No other text outside the JSON object.`;
-
-    const userContent = `SUBSYSTEM: VL2.${String(subsystem).padStart(2,'0')}
-LABEL NUMBER: ${labelNumber || 'not provided'}
-PROBLEM DESCRIPTION: ${problemDescription}
-${photoDescriptions.length > 0 ? `PHOTOS: ${photoDescriptions.join('; ')}` : ''}
-
----
-INDEX.md:
-${indexMd || '[INDEX.md not yet populated — knowledge base being built]'}
-
----
-STOERUNGEN_TS${String(subsystem).padStart(2,'0')}.md (recent fault log):
-${stoerMd || '[No fault history for this subsystem yet]'}`;
-
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }]
-    });
-
-    const raw = response.content.map(b => b.text || '').join('');
-    // Strip any markdown fences if Claude adds them
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-
-    return res.status(200).json(parsed);
-
+    if (mode === 'triage') return await triage(body, lang, res);
+    return await diagnosePrep(body, lang, res);
   } catch (err) {
     console.error('clarify.js error:', err);
     return res.status(500).json({ error: err.message });
   }
+}
+
+async function triage(body, lang, res) {
+  const { operator_text = '', images = [] } = body;
+  if (!operator_text && images.length === 0) {
+    return res.status(400).json({ error: 'operator_text or images required' });
+  }
+
+  const sys = lang === 'DE'
+    ? `Sie sind der Triage-Helfer für Verpackungslinie VL2 bei Dr. Alder. 20 Subsysteme:
+${SUBSYSTEMS}
+
+Aufgabe: Lesen Sie die Bedienermeldung und das Foto (falls vorhanden). Antworten Sie KURZ und KLAR, max. 3 Sätze:
+1. Wahrscheinlichstes Subsystem mit Tag (z.B. „VL2.11 TRP – Tray-Packer").
+2. Ein Satz, warum.
+3. Wenn unsicher: EINE gezielte Rückfrage statt Vermutung.
+
+Keine Aufzählungen, keine Überschriften, kein Markdown. Nur Fließtext.`
+    : `You are the triage helper for packaging line VL2 at Dr. Alder. 20 subsystems:
+${SUBSYSTEMS}
+
+Task: Read the operator's report and photo (if any). Reply SHORT and CLEAR, max 3 sentences:
+1. Most likely subsystem with tag (e.g. "VL2.11 TRP – Tray Packer").
+2. One sentence why.
+3. If unsure: ONE specific clarifying question instead of guessing.
+
+No bullet lists, no headings, no markdown. Plain prose only.`;
+
+  const content = [];
+  images.forEach(img => content.push({
+    type: 'image',
+    source: { type: 'base64', media_type: img.mime || 'image/jpeg', data: img.b64 }
+  }));
+  content.push({ type: 'text', text: operator_text || '(photo only — no text)' });
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 250,
+    system: sys,
+    messages: [{ role: 'user', content }]
+  });
+
+  const reply = response.content.map(b => b.text || '').join('').trim();
+  return res.status(200).json({ reply });
+}
+
+async function diagnosePrep(body, lang, res) {
+  const subsystem = body.subsystem;
+  if (!subsystem) return res.status(400).json({ error: 'subsystem required' });
+
+  const ssNum = String(subsystem).replace(/^VL2\./, '').padStart(2, '0');
+
+  const [indexMd, stoerMd] = await Promise.all([
+    getObjectText('INDEX.md'),
+    getObjectText(`subsystems/STOERUNGEN_TS${ssNum}.md`).catch(() => '')
+  ]);
+
+  const sys = `You are the steering intelligence for the VL2 diagnostic agent at Dr. Alder.
+
+Decide which 0-2 lean knowledge files would help diagnose THIS specific fault. Respond ONLY with valid JSON:
+{ "filesNeeded": ["..."], "priorCaseFound": true|false, "priorCaseSummary": "one sentence or empty" }
+
+Rules:
+- ONLY request paths ending in _kb.md or _alarms.md (lean summaries; safe for live diagnosis).
+- NEVER request manuals/raw/ (full PDFs — too expensive) or diagrams/ (load offline only).
+- Hard cap: max 2 files. Empty array OK if STOERUNGEN log alone is enough.
+- priorCaseSummary: one sentence max, empty if none.
+- No prose outside the JSON.`;
+
+  const userText = `SUBSYSTEM: VL2.${ssNum}
+LINE STATE: ${body.line_state || 'unknown'}
+SYMPTOMS: ${(body.symptoms || []).join('; ') || '(none selected)'}
+OPERATOR NOTES: ${body.operator_notes || body.problemDescription || '(none)'}
+
+---
+INDEX.md:
+${indexMd || '[INDEX not yet populated]'}
+
+---
+STOERUNGEN_TS${ssNum}.md:
+${stoerMd || '[No fault history]'}`;
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 400,
+    system: sys,
+    messages: [{ role: 'user', content: userText }]
+  });
+
+  const raw = response.content.map(b => b.text || '').join('');
+  const clean = raw.replace(/```json|```/g, '').trim();
+  let parsed;
+  try { parsed = JSON.parse(clean); }
+  catch { parsed = { filesNeeded: [], priorCaseFound: false, priorCaseSummary: '' }; }
+  return res.status(200).json(parsed);
 }
 
 function readBody(req) {

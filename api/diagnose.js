@@ -58,17 +58,16 @@ WHAT YOU MUST NOT DO:
 - Never authorize live work under voltage
 - Never decide on shutdown or continued operation
 - Never intervene in PLC or control systems
-- Never overwrite knowledge base entries — only append
 - Never document a repair without operator confirmation
 
-Structure your initial response EXACTLY:
-SEVERITY: [HIGH / MEDIUM / LOW]
-ROOT CAUSE ASSESSMENT: (2-3 sentences specific to this machine and tag)
-IMMEDIATE ACTIONS: (numbered list, specific to components)
-INSPECT THESE COMPONENTS: (use VL2.XX.TYPE.NNN tags where known)
-UPSTREAM / DOWNSTREAM IMPACT: (cascade effects on other subsystems)
-DO NOT RESTART UNTIL: (specific condition)
-ESCALATE IF: (condition requiring OEM or senior tech)`,
+RESPONSE FORMAT — PLAIN PROSE, NO MARKDOWN, NO BULLET HEADERS, KEEP UNDER 6 SHORT SENTENCES:
+Sentence 1: Severity (HIGH/MEDIUM/LOW) and the most likely cause, specific to this machine.
+Sentence 2: First thing to check (one specific component tag VL2.XX.TYPE.NNN if known).
+Sentence 3: Second thing to check (or skip if first is decisive).
+Sentence 4: What must be verified before restart.
+Sentence 5 (only if relevant): When to escalate to OEM or senior tech.
+
+If you genuinely need more info to diagnose, instead ask ONE specific clarifying question — nothing else.`,
 
   DE: `Sie sind der Technische Agent (TA) für die Verpackungslinie VL2 bei Dr. Alder Tiernahrung GmbH.
 
@@ -114,17 +113,16 @@ WAS SIE NICHT TUN DÜRFEN:
 - Keine Freigabe für Arbeiten unter Spannung
 - Keine Entscheidung über Abschaltung oder Weiterbetrieb
 - Keine Eingriffe in SPS oder Steuerungssysteme
-- Keine Überschreibung von Wissensbankeinträgen — nur Anhängen
 - Keine autonome Dokumentation von Reparaturen ohne Bestätigung des Bedieners
 
-Strukturieren Sie Ihre erste Antwort GENAU so:
-SEVERITY: [HIGH / MEDIUM / LOW]
-ROOT CAUSE ASSESSMENT: (2-3 Sätze, maschinenbezogen)
-IMMEDIATE ACTIONS: (nummerierte Liste, komponentenbezogen)
-INSPECT THESE COMPONENTS: (VL2.XX.TYP.NNN-Tags verwenden wenn bekannt)
-UPSTREAM / DOWNSTREAM IMPACT: (Kaskadeneffekte auf andere Subsysteme)
-DO NOT RESTART UNTIL: (konkrete Bedingung)
-ESCALATE IF: (Bedingung für OEM oder erfahrenen Techniker)`
+ANTWORTFORMAT — FLIESSTEXT, KEIN MARKDOWN, KEINE AUFZÄHLUNGEN, MAX. 6 KURZE SÄTZE:
+Satz 1: Schweregrad (HIGH/MEDIUM/LOW) und wahrscheinlichste Ursache, maschinenspezifisch.
+Satz 2: Erste Prüfung (ein konkretes Komponentenkennzeichen VL2.XX.TYP.NNN wenn bekannt).
+Satz 3: Zweite Prüfung (oder weglassen, wenn erste entscheidend).
+Satz 4: Was vor dem Wiederanfahren verifiziert werden muss.
+Satz 5 (nur wenn relevant): Wann an OEM oder erfahrenen Techniker eskalieren.
+
+Wenn Sie wirklich mehr Information benötigen, stellen Sie stattdessen EINE gezielte Rückfrage — sonst nichts.`
 };
 
 const FOLLOWUP_SUFFIX = {
@@ -149,19 +147,26 @@ export default async function handler(req, res) {
   try { body = JSON.parse(await readBody(req)); }
   catch { return res.status(400).json({ error: 'Invalid JSON body' }); }
 
-  const {
-    subsystem,
-    problemDescription,
-    labelNumber,
-    photos = [],          // array of { base64, mediaType }
-    filesNeeded = [],     // from clarify.js
-    priorCaseSummary = '',
-    conversationHistory = [],   // array of {role, content} for follow-up turns
-    language = 'DE',
-    lineState,
-    symptoms = [],
-    operatorNotes = ''
-  } = body;
+  // Accept both new (frontend) and legacy field names
+  const subsystemRaw         = body.subsystem;
+  const problemDescription   = body.problemDescription;
+  const labelNumber          = body.labelNumber;
+  const photos               = (body.images || body.photos || []).map(p => ({
+    base64:    p.b64    || p.base64,
+    mediaType: p.mime   || p.mediaType || 'image/jpeg'
+  }));
+  const filesNeeded          = body.files_needed       || body.filesNeeded       || [];
+  const priorCaseSummary     = body.priorCaseSummary   || '';
+  const conversationHistory  = body.conversationHistory || [];
+  const language             = body.language           || 'DE';
+  const lineState            = body.line_state         || body.lineState;
+  const symptoms             = body.symptoms           || [];
+  const operatorNotes        = body.operator_notes     || body.operatorNotes     || '';
+
+  // Subsystem may arrive as "VL2.11" or 11 — normalize to padded number
+  const subsystem = subsystemRaw == null
+    ? null
+    : String(subsystemRaw).replace(/^VL2\./, '');
 
   const isFollowup = conversationHistory.length > 0;
   const lang = language === 'EN' ? 'EN' : 'DE';
@@ -261,16 +266,20 @@ export default async function handler(req, res) {
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: isFollowup ? 600 : 1200,
+      max_tokens: isFollowup ? 400 : 600,
       system: systemPrompt,
       messages
     });
 
-    const replyText = response.content.map(b => b.text || '').join('');
+    const replyText = response.content.map(b => b.text || '').join('').trim();
+
+    // summary = first sentence (or first 120 chars) for the followup conversation log
+    const firstSentence = (replyText.match(/^.*?[.!?](\s|$)/) || [replyText.slice(0, 120)])[0].trim();
 
     return res.status(200).json({
-      reply: replyText,
-      usage: response.usage
+      reply:   replyText,
+      summary: firstSentence,
+      usage:   response.usage
     });
 
   } catch (err) {

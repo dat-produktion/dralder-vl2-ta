@@ -1350,39 +1350,29 @@ async function runTriage(){
 }
 
 function renderTriageResults(d){
-  const t = I18N[lang];
   const results = document.getElementById('triageResults');
   results.innerHTML = '';
+  if(d.error){
+    results.innerHTML = `<div style="color:var(--red);font-size:12px;padding:8px;">${escapeHtml(d.error)}</div>`;
+    return;
+  }
+  const reply = (d.reply || '').trim();
   const wrap = document.createElement('div');
   wrap.className = 'triage-results';
-  const conf = (d.confidence || 'medium').toLowerCase();
-  const confCls = conf==='high'?'conf-h':(conf==='low'?'conf-l':'conf-m');
-  const confLabel = conf==='high'?t.confH:(conf==='low'?t.confL:t.confM);
-  wrap.innerHTML = `<div class="triage-results-hd"><span>${lang==='DE'?'TA-Triage':'TA Triage'}</span><span class="conf-pill ${confCls}">${confLabel}</span></div>`;
+  wrap.innerHTML = `<div class="triage-results-hd"><span>${lang==='DE'?'TA-Triage':'TA Triage'}</span></div>
+    <div class="triage-reasoning" style="font-size:13px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(reply)}</div>`;
 
-  (d.candidates || []).forEach((c,i) => {
-    const ssId = c.subsystem ? c.subsystem.replace('VL2.','') : null;
-    const ss = ssId && SS[ssId];
-    if(!ss) return;
-    const cand = document.createElement('div');
-    cand.className = 'triage-candidate' + (i===0?' top':'');
-    cand.innerHTML = `
-      <div class="triage-cand-hd">
-        <span class="ss-badge">VL2.${ssId}</span>
-        <span class="ss-name">${lang==='DE'?ss.name_de:ss.name_en}</span>
-        <span class="rank-pill ${i===0?'rank-top':'rank-also'}">${i===0?t.rankTop:t.rankAlso}</span>
-      </div>
-      <div class="triage-reasoning">${c.reasoning || ''}</div>
-      <button class="investigate-btn" onclick="selectBlock('${ssId}')">${lang==='DE'?'Hier weiter →':'Continue here →'}</button>`;
-    wrap.appendChild(cand);
-  });
-
-  if(d.clarifying_questions && d.clarifying_questions.length){
-    const cl = document.createElement('div');
-    cl.className = 'triage-clarify';
-    cl.innerHTML = `<div class="triage-clarify-hd">${t.clarifyHd}</div>` +
-      d.clarifying_questions.map(q => `<div class="triage-clarify-q">${q}</div>`).join('');
-    wrap.appendChild(cl);
+  // Auto-detect first VL2.XX tag in the reply and offer a "Continue here" button
+  const m = reply.match(/VL2\.(\d{2})/);
+  if(m && SS[m[1]]){
+    const ssId = m[1];
+    const ss = SS[ssId];
+    const btn = document.createElement('button');
+    btn.className = 'investigate-btn';
+    btn.style.marginTop = '8px';
+    btn.textContent = (lang==='DE'?'Weiter mit ':'Continue with ') + `VL2.${ssId} ${lang==='DE'?ss.name_de:ss.name_en} →`;
+    btn.onclick = () => selectBlock(ssId);
+    wrap.appendChild(btn);
   }
   results.appendChild(wrap);
 }
@@ -1476,23 +1466,23 @@ async function runDiagnosis(){
 function renderDiagnosis(d){
   const t = I18N[lang];
   const respText = document.getElementById('responseText');
-  const sev = (d.severity || 'medium').toLowerCase();
+  if(d.error){
+    respText.innerHTML = `<div style="color:var(--red);font-size:12px;">${escapeHtml(d.error)}</div>`;
+    return;
+  }
+  const reply = (d.reply || '').trim();
+
+  // Auto-detect severity from leading text (HIGH/MEDIUM/LOW or HOCH/MITTEL/NIEDRIG)
+  let sev = 'med';
+  let sevLabel = t.sevMed;
+  const upper = reply.slice(0, 80).toUpperCase();
+  if(/\b(HIGH|HOCH|HOHE)\b/.test(upper))      { sev='high'; sevLabel=t.sevHigh; }
+  else if(/\b(LOW|NIEDRIG|GERING)\b/.test(upper)){ sev='low';  sevLabel=t.sevLow;  }
   const sevCls = sev==='high'?'sev-high':(sev==='low'?'sev-low':'sev-med');
-  const sevLabel = sev==='high'?t.sevHigh:(sev==='low'?t.sevLow:t.sevMed);
-  let html = `<span class="sev-badge ${sevCls}">${sevLabel}</span>`;
-  const sections = [
-    {key:'likely_problem', label:t.diagH.prob},
-    {key:'likely_cause', label:t.diagH.cause},
-    {key:'recommended_action', label:t.diagH.action},
-    {key:'safety_notes', label:t.diagH.safety},
-    {key:'followup', label:t.diagH.followup}
-  ];
-  sections.forEach(s => {
-    if(d[s.key]){
-      html += `<div class="diag-section"><div class="diag-heading">${s.label}</div><div class="diag-body">${formatText(d[s.key])}</div></div>`;
-    }
-  });
-  respText.innerHTML = html;
+
+  respText.innerHTML =
+    `<span class="sev-badge ${sevCls}">${sevLabel}</span>` +
+    `<div class="diag-body" style="margin-top:10px;font-size:13px;line-height:1.55;white-space:pre-wrap;">${escapeHtml(reply)}</div>`;
 }
 
 function formatText(text){
