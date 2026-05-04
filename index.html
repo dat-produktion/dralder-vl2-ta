@@ -1288,7 +1288,7 @@ async function transcribeAudio(blob){
           elem.value = (elem.value ? elem.value + ' ' : '') + d.text;
           if(elem.id === 'faultNotes') updateSteps();
         } else {
-          alert(t.voiceErrorTrans);
+          alert(t.voiceErrorTrans + (d.error ? '\n\n' + d.error : ''));
         }
       } catch(e){
         alert(t.voiceErrorTrans);
