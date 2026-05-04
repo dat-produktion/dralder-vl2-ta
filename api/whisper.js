@@ -1,7 +1,9 @@
 // api/whisper.js
-// Receives audio blob from tablet, sends to OpenAI Whisper, returns transcript
+// Receives JSON { audio_b64, mime, language } from the frontend, decodes to a
+// temp file, and sends to OpenAI Whisper for transcription.
 // POST /api/whisper
-// Body: multipart/form-data with field "audio" (webm/ogg/mp4 blob)
+// Body JSON: { audio_b64: string (base64), mime?: string, language?: 'de'|'en' }
+// Response: { text: string } on success, { error: string } on failure.
 
 import { createReadStream } from 'fs';
 import { writeFile, unlink } from 'fs/promises';
@@ -9,7 +11,10 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import FormData from 'form-data';
 
-export const config = { maxDuration: 30 };
+export const config = {
+  maxDuration: 30,
+  api: { bodyParser: { sizeLimit: '25mb' } }
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -17,30 +22,32 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
 
+  let body;
+  try { body = JSON.parse(await readBody(req)); }
+  catch { return res.status(400).json({ error: 'Invalid JSON body' }); }
+
+  const { audio_b64, mime = 'audio/webm', language = 'de' } = body;
+  if (!audio_b64) return res.status(400).json({ error: 'audio_b64 required' });
+
+  // Pick extension from mime so Whisper accepts the file
+  const ext = mime.includes('mp4')  ? 'mp4'
+            : mime.includes('mpeg') ? 'mp3'
+            : mime.includes('ogg')  ? 'ogg'
+            : mime.includes('wav')  ? 'wav'
+            :                          'webm';
+
+  const tmpPath = join(tmpdir(), `audio_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`);
+
   try {
-    // Vercel passes raw body as Buffer when content-type is multipart
-    // We write to a temp file then pass to Whisper as a stream
-    const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
-    const audioBuffer = Buffer.concat(chunks);
-
-    // Determine extension from content-type header
-    const contentType = req.headers['content-type'] || 'audio/webm';
-    const ext = contentType.includes('mp4') ? 'mp4'
-               : contentType.includes('ogg') ? 'ogg'
-               : 'webm';
-
-    const tmpPath = join(tmpdir(), `audio_${Date.now()}.${ext}`);
+    const audioBuffer = Buffer.from(audio_b64, 'base64');
+    if (audioBuffer.length === 0) return res.status(400).json({ error: 'audio_b64 decoded to zero bytes' });
     await writeFile(tmpPath, audioBuffer);
 
-    // Build multipart request to Whisper
     const form = new FormData();
-    form.append('file', createReadStream(tmpPath), { filename: `audio.${ext}`, contentType });
+    form.append('file', createReadStream(tmpPath), { filename: `audio.${ext}`, contentType: mime });
     form.append('model', 'whisper-1');
-    // Prompt helps Whisper with factory/technical vocabulary
-    form.append('prompt', 'Packaging line, conveyor, sensor, pallet, robot, gripper, labeler, film wrapper, palletizer, VFD, PLC, fault, alarm');
-    // Language hint - German primary but allow English technical terms
-    form.append('language', 'de');
+    form.append('prompt', 'Verpackungslinie, Förderband, Sensor, Palette, Roboter, Greifer, Etikettierer, Folienwickler, Palettierer, Frequenzumrichter, SPS, Störung, Alarm, Vintek, Nordson, ZVI, Fanuc, Videojet, Langguth, Eidos. Packaging line, conveyor, sensor, pallet, robot, gripper, labeler, film wrapper, palletizer, VFD, PLC, fault, alarm.');
+    form.append('language', language === 'en' ? 'en' : 'de');
 
     const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
@@ -48,19 +55,29 @@ export default async function handler(req, res) {
       body: form
     });
 
-    await unlink(tmpPath).catch(() => {}); // cleanup, ignore error if already gone
-
     if (!whisperRes.ok) {
-      const err = await whisperRes.text();
-      console.error('Whisper error:', err);
-      return res.status(502).json({ error: 'Whisper API error', detail: err });
+      const errText = await whisperRes.text();
+      console.error('Whisper API error:', whisperRes.status, errText);
+      return res.status(502).json({ error: `Whisper ${whisperRes.status}: ${errText.slice(0, 300)}` });
     }
 
-    const { text } = await whisperRes.json();
-    return res.status(200).json({ transcript: text.trim() });
+    const data = await whisperRes.json();
+    return res.status(200).json({ text: (data.text || '').trim() });
 
   } catch (err) {
     console.error('whisper.js error:', err);
     return res.status(500).json({ error: err.message });
+  } finally {
+    await unlink(tmpPath).catch(() => {});
   }
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.setEncoding('utf8');
+    req.on('data', chunk => data += chunk);
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
 }
