@@ -1515,6 +1515,17 @@ function renderTriageResults(d){
   wrap.innerHTML = `<div class="triage-results-hd"><span>${lang==='DE'?'TA-Triage':'TA Triage'}</span></div>
     <div class="triage-reasoning" style="font-size:13px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(reply)}</div>`;
 
+  // Inline answer area — lets the operator reply to a clarifying question or add detail.
+  const answerWrap = document.createElement('div');
+  answerWrap.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:6px;';
+  answerWrap.innerHTML = `
+    <div class="ta-with-mic">
+      <textarea class="fault-notes" id="triageAnswer" placeholder="${lang==='DE'?'Antworten oder weitere Details ergänzen…':'Answer or add more detail…'}" style="min-height:50px;"></textarea>
+      <button type="button" class="mic-inline" id="micBtnTriageAns" onclick="toggleVoice('triageAnswer')" title="${lang==='DE'?'Spracheingabe':'Voice input'}">🎤</button>
+    </div>
+    <button type="button" class="btn-secondary" id="triageAnswerSendBtn" onclick="sendTriageAnswer()" style="align-self:flex-start;padding:7px 12px;">↻ ${lang==='DE'?'Antwort senden & neu auswerten':'Send answer & re-evaluate'}</button>`;
+  wrap.appendChild(answerWrap);
+
   // Auto-detect first VL2.XX tag in the reply and offer a "Continue here" button
   const m = reply.match(/VL2\.(\d{2})/);
   if(m && SS[m[1]]){
@@ -1522,12 +1533,39 @@ function renderTriageResults(d){
     const ss = SS[ssId];
     const btn = document.createElement('button');
     btn.className = 'investigate-btn';
-    btn.style.marginTop = '8px';
+    btn.style.marginTop = '4px';
     btn.textContent = (lang==='DE'?'Weiter mit ':'Continue with ') + `VL2.${ssId} ${lang==='DE'?ss.name_de:ss.name_en} →`;
-    btn.onclick = () => selectBlock(ssId);
+    btn.onclick = () => continueFromTriage(ssId);
     wrap.appendChild(btn);
   }
   results.appendChild(wrap);
+}
+
+// Operator typed an answer to Claude's clarifying question — fold it into the
+// triage notes and re-run triage so Claude sees the full context.
+function sendTriageAnswer(){
+  const ans = (document.getElementById('triageAnswer')?.value || '').trim();
+  if(!ans) return;
+  const notesEl = document.getElementById('triageNotes');
+  notesEl.value = (notesEl.value ? notesEl.value + ' — ' : '') + ans;
+  document.getElementById('triageAnswer').value = '';
+  runTriage();
+}
+
+// Operator decided to commit to the subsystem suggested by triage.
+// Carry the full triage transcript (original notes + any answer) into faultNotes
+// so the diagnose call has the full picture without re-typing.
+function continueFromTriage(ssId){
+  const triageText = (document.getElementById('triageNotes')?.value || '').trim();
+  const answerText = (document.getElementById('triageAnswer')?.value || '').trim();
+  selectBlock(ssId);
+  const combined = [triageText, answerText].filter(Boolean).join(' — ');
+  if(combined){
+    const fn = document.getElementById('faultNotes');
+    fn.value = combined;
+    markInputDirty();
+    updateSteps();
+  }
 }
 
 function clearTriage(){
