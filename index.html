@@ -65,6 +65,11 @@
   .mic-btn{width:52px;height:52px;border-radius:50%;background:var(--burg);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh2);flex-shrink:0;}
   .mic-btn:hover{background:var(--burg-d);}
   .mic-btn.recording{background:var(--red);animation:rec-pulse 1s ease-in-out infinite;}
+  .ta-with-mic{position:relative;}
+  .ta-with-mic textarea{padding-right:40px;}
+  .mic-inline{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:var(--burg);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh1);}
+  .mic-inline:hover{background:var(--burg-d);}
+  .mic-inline.recording{background:var(--red);animation:rec-pulse 1s ease-in-out infinite;}
   @keyframes rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}50%{box-shadow:0 0 0 8px rgba(220,38,38,0)}}
   .mic-label{font-size:9px;font-weight:600;color:var(--txf);letter-spacing:.5px;text-transform:uppercase;text-align:center;max-width:60px;line-height:1.2;}
 
@@ -325,7 +330,7 @@
           </div>
         </div>
         <div class="voice-col">
-          <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Voice input">🎤</button>
+          <button class="mic-btn" id="micBtn" onclick="toggleVoice('triageNotes')" title="Voice input">🎤</button>
           <div class="mic-label" id="micLabel">Tippen zum Sprechen</div>
         </div>
       </div>
@@ -408,7 +413,10 @@
 
         <div class="section">
           <div class="sec-title"><span>📝</span><span id="notesTitle">Bedienernotizen</span></div>
-          <textarea class="fault-notes" id="faultNotes" placeholder="Beschreiben Sie, was Sie sehen, hören oder bemerken…" oninput="updateSteps()"></textarea>
+          <div class="ta-with-mic">
+            <textarea class="fault-notes" id="faultNotes" placeholder="Beschreiben Sie, was Sie sehen, hören oder bemerken…" oninput="markInputDirty(); updateSteps();"></textarea>
+            <button type="button" class="mic-inline" id="micBtnFault" onclick="toggleVoice('faultNotes')" title="Spracheingabe">🎤</button>
+          </div>
         </div>
 
         <div class="section">
@@ -434,14 +442,17 @@
           <div class="followup-title"><span>💬</span><span id="followupTitleText">Diagnose fortsetzen</span></div>
           <div class="followup-history" id="followupHistory"></div>
           <div class="followup-input-wrap">
-            <textarea class="fault-notes" id="followupInput" placeholder="Was haben Sie gefunden? Was haben Sie versucht?" style="min-height:52px;"></textarea>
-            <button class="followup-btn" id="followupBtn" onclick="runFollowup()">💬 <span id="followupBtnText">Senden & Fortsetzen</span></button>
+            <div class="ta-with-mic">
+              <textarea class="fault-notes" id="followupInput" placeholder="Was haben Sie gefunden? Was haben Sie versucht?" style="min-height:52px;" oninput="updateFollowupBtnState()"></textarea>
+              <button type="button" class="mic-inline" id="micBtnFollowup" onclick="toggleVoice('followupInput')" title="Spracheingabe">🎤</button>
+            </div>
+            <button class="followup-btn" id="followupBtn" onclick="runFollowup()" disabled>💬 <span id="followupBtnText">Senden & Fortsetzen</span></button>
           </div>
         </div>
       </div>
 
       <div class="panel-actions">
-        <button class="btn-primary" id="diagnoseBtn" onclick="runDiagnosis()">🔍 <span id="diagnoseBtnText">TA-Diagnose starten</span></button>
+        <button class="btn-primary" id="diagnoseBtn" onclick="runDiagnosis()" disabled>🔍 <span id="diagnoseBtnText">TA-Diagnose starten</span></button>
         <div class="btn-row">
           <button class="btn-secondary success" onclick="openResolveModal()" id="resolveBtn">✓ <span id="resolveBtnText">Behoben</span></button>
           <button class="btn-secondary" onclick="resetForm()" id="resetFormBtn">↺ <span id="resetFormBtnText">Zurücksetzen</span></button>
@@ -461,7 +472,10 @@
       <div class="resolve-warning" id="resolveWarning">Beide Felder erforderlich.</div>
       <div>
         <div class="resolve-field-label"><span id="resolveFixLabel">Was hat das Problem behoben?</span><span class="req"> *</span></div>
-        <textarea class="fault-notes" id="resolveFix" placeholder="Maßnahme beschreiben…" style="margin-top:5px;" oninput="updateResolveBtn()"></textarea>
+        <div class="ta-with-mic" style="margin-top:5px;">
+          <textarea class="fault-notes" id="resolveFix" placeholder="Maßnahme beschreiben…" oninput="updateResolveBtn()"></textarea>
+          <button type="button" class="mic-inline" id="micBtnResolve" onclick="toggleVoice('resolveFix')" title="Spracheingabe">🎤</button>
+        </div>
       </div>
       <div>
         <div class="resolve-field-label"><span id="resolvePhotoLabel">Foto der Reparatur</span><span class="req"> *</span></div>
@@ -814,6 +828,7 @@ let lineState = null;
 let currentErrorId       = null;   // DDMMYYYY-NNN — set on first triage/diagnose, cleared on resolve or after fix-not-reported log
 let diagnosisCompleted   = false;  // becomes true after a successful /api/diagnose call
 let resolutionRecorded   = false;  // becomes true after /api/resolve OR fix-not-reported /api/log call
+let pendingDiagnoseDirty = false;  // true when input has changed since last diagnose call
 let selectedSymptoms = new Set();
 let uploadedImages = []; // {data, mime, name, b64}
 let triageImages = [];
@@ -823,6 +838,29 @@ let lastDiagnosis = null;
 let voiceTarget = null; // 'triage' | 'fault' | 'followup' | 'resolve'
 let mediaRecorder = null;
 let audioChunks = [];
+
+// ============================================================================
+// BUTTON STATE — diagnose / followup enable based on fresh input
+// ============================================================================
+function markInputDirty(){
+  pendingDiagnoseDirty = true;
+  updateDiagnoseBtnState();
+}
+function updateDiagnoseBtnState(){
+  const btn = document.getElementById('diagnoseBtn');
+  if(!btn) return;
+  const notesLen = (document.getElementById('faultNotes')?.value || '').trim().length;
+  const hasInput = (typeof selectedSymptoms !== 'undefined' && selectedSymptoms.size > 0)
+                || notesLen > 0
+                || uploadedImages.length > 0;
+  btn.disabled = !(pendingDiagnoseDirty && hasInput);
+}
+function updateFollowupBtnState(){
+  const btn = document.getElementById('followupBtn');
+  const inp = document.getElementById('followupInput');
+  if(!btn || !inp) return;
+  btn.disabled = inp.value.trim().length === 0;
+}
 
 // ============================================================================
 // ERROR ID — every fault session gets a unique ID DDMMYYYY-NNN
@@ -1080,6 +1118,7 @@ function selectBlock(id){
   conversationTurns = [];
   lastDiagnosis = null;
   lineState = null;
+  pendingDiagnoseDirty = false;
   document.getElementById('faultNotes').value = '';
   document.getElementById('imagePreviews').innerHTML = '';
   document.getElementById('responseBox').classList.remove('visible');
@@ -1092,6 +1131,12 @@ function selectBlock(id){
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('faultForm').style.display = 'flex';
   updateSteps();
+  updateDiagnoseBtnState();
+  // Scroll the fault form into view (especially important on mobile where it lives below the fold).
+  setTimeout(() => {
+    const el = document.getElementById('faultForm');
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 50);
 }
 
 function loadSubsystemPanel(id){
@@ -1210,6 +1255,7 @@ function toggleSymptom(s, btn){
     selectedSymptoms.add(s);
     btn.classList.add('selected');
   }
+  markInputDirty();
   updateSteps();
 }
 
@@ -1220,6 +1266,7 @@ function setLS(state){
   lineState = state;
   document.getElementById('btnStopped').classList.toggle('stopped', state==='stopped');
   document.getElementById('btnRunning').classList.toggle('running', state==='running');
+  markInputDirty();
   updateSteps();
 }
 
@@ -1266,6 +1313,7 @@ async function handleImages(event){
     try { uploadedImages.push(await compressImage(f)); } catch(e){ console.error(e); }
   }
   renderImagePreviews();
+  markInputDirty();
   updateSteps();
 }
 
@@ -1319,21 +1367,33 @@ function renderResolvePreview(){
   }
 }
 
-function removeImage(i){ uploadedImages.splice(i,1); renderImagePreviews(); updateSteps(); }
+function removeImage(i){ uploadedImages.splice(i,1); renderImagePreviews(); markInputDirty(); updateSteps(); }
 function removeTriageImage(i){ triageImages.splice(i,1); renderTriagePreviews(); }
 function removeResolveImage(){ resolveImage = null; renderResolvePreview(); updateResolveBtn(); }
 
 // ============================================================================
 // VOICE INPUT — Whisper API
 // ============================================================================
-async function toggleVoice(){
-  const btn = document.getElementById('micBtn');
-  const lbl = document.getElementById('micLabel');
+// `targetId` is one of: 'triageNotes' | 'faultNotes' | 'followupInput' | 'resolveFix'.
+// Defaults to 'triageNotes' for backward compatibility with the big mic button.
+let activeMicBtnId = null;
+async function toggleVoice(targetId){
   const t = I18N[lang];
-  if(btn.classList.contains('recording')){
+  // Pick which textarea this recording targets — remembered until transcription completes.
+  if(targetId) voiceTarget = targetId;
+  // Find which mic button is currently active (the one the user clicked).
+  const btnId = activeMicBtnId
+    || (targetId === 'faultNotes'    ? 'micBtnFault'
+      : targetId === 'followupInput' ? 'micBtnFollowup'
+      : targetId === 'resolveFix'    ? 'micBtnResolve'
+      : 'micBtn');
+  const btn = document.getElementById(btnId);
+  const lbl = document.getElementById('micLabel');
+  if(btn && btn.classList.contains('recording')){
     mediaRecorder.stop();
     btn.classList.remove('recording');
-    lbl.textContent = t.micProcessing;
+    activeMicBtnId = null;
+    if(lbl && btnId === 'micBtn') lbl.textContent = t.micProcessing;
   } else {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
@@ -1346,8 +1406,9 @@ async function toggleVoice(){
         stream.getTracks().forEach(tr => tr.stop());
       };
       mediaRecorder.start();
-      btn.classList.add('recording');
-      lbl.textContent = t.micRecording;
+      if(btn) btn.classList.add('recording');
+      activeMicBtnId = btnId;
+      if(lbl && btnId === 'micBtn') lbl.textContent = t.micRecording;
     } catch(e){
       alert(t.voiceErrorMic);
       console.error(e);
@@ -1370,14 +1431,14 @@ async function transcribeAudio(blob){
         });
         const d = await r.json();
         if(d.text){
-          // Decide target — triage textarea is most common
-          const target = document.activeElement;
-          let elem = document.getElementById('triageNotes');
-          if(target && (target.id === 'faultNotes' || target.id === 'followupInput' || target.id === 'resolveFix')){
-            elem = target;
-          }
+          // Route to the textarea remembered when the user clicked their mic button.
+          const targetId = voiceTarget || 'triageNotes';
+          const elem = document.getElementById(targetId) || document.getElementById('triageNotes');
           elem.value = (elem.value ? elem.value + ' ' : '') + d.text;
-          if(elem.id === 'faultNotes') updateSteps();
+          if(elem.id === 'faultNotes') { markInputDirty(); updateSteps(); }
+          if(elem.id === 'followupInput') updateFollowupBtnState();
+          if(elem.id === 'resolveFix') updateResolveBtn();
+          voiceTarget = null;
         } else {
           alert(t.voiceErrorTrans + (d.error ? '\n\n' + d.error : ''));
         }
@@ -1539,7 +1600,16 @@ async function runDiagnosis(){
     });
     const diagData = await diagResp.json();
     lastDiagnosis = diagData;
-    if(!diagData.error) diagnosisCompleted = true;
+    if(!diagData.error){
+      diagnosisCompleted = true;
+      pendingDiagnoseDirty = false;
+      updateDiagnoseBtnState();
+      // Scroll the new response into view so the operator sees it without hunting.
+      setTimeout(() => {
+        const el = document.getElementById('responseBox');
+        if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 80);
+    }
     conversationTurns = [
       { role:'user', text: `${symptomList.join(', ')}${notes?' — '+notes:''}` },
       { role:'assistant', text: diagData.summary || JSON.stringify(diagData) }
@@ -1553,10 +1623,10 @@ async function runDiagnosis(){
     respText.innerHTML = `<div style="color:var(--red);font-size:12px;">${lang==='DE'?'Diagnose-Fehler':'Diagnosis error'}: ${e.message}</div>`;
     console.error(e);
   } finally {
-    btn.disabled = false;
     btn.classList.remove('loading-btn');
     btnText.textContent = t.diagBtn;
     respBox.classList.remove('loading');
+    updateDiagnoseBtnState();   // honors pendingDiagnoseDirty (false after success → stays disabled until new input)
   }
 }
 
@@ -1633,8 +1703,8 @@ async function runFollowup(){
     renderFollowupHistory();
     console.error(e);
   } finally {
-    btn.disabled = false;
     btnText.textContent = t.followupBtn;
+    updateFollowupBtnState();   // disabled because we cleared input above
   }
 }
 
@@ -1765,6 +1835,7 @@ async function resetForm(){
     uploadedImages = [];
     conversationTurns = [];
     lineState = null;
+    pendingDiagnoseDirty = false;
     document.getElementById('faultNotes').value = '';
     document.getElementById('imagePreviews').innerHTML = '';
     document.getElementById('responseBox').classList.remove('visible');
@@ -1774,6 +1845,8 @@ async function resetForm(){
     document.getElementById('sePrompt').classList.remove('visible');
     renderSymptoms();
     updateSteps();
+    updateDiagnoseBtnState();
+    updateFollowupBtnState();
   }
 }
 
