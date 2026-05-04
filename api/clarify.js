@@ -4,7 +4,7 @@
 //   mode='diagnose_prep' → subsystem already chosen → returns { filesNeeded, priorCaseFound, priorCaseSummary }
 
 import Anthropic from '@anthropic-ai/sdk';
-import { getObjectText } from './_storage.js';
+import { getObjectText, putObject } from './_storage.js';
 
 export const config = { maxDuration: 30 };
 
@@ -32,9 +32,22 @@ export default async function handler(req, res) {
 }
 
 async function triage(body, lang, res) {
-  const { operator_text = '', images = [] } = body;
+  const { operator_text = '', images = [], error_id: errorId = null } = body;
   if (!operator_text && images.length === 0) {
     return res.status(400).json({ error: 'operator_text or images required' });
+  }
+
+  // Fire-and-forget: persist triage photos to Hetzner under photos/<errorId>/triage-NN.<ext>.
+  // Does NOT block the Claude call; failures are logged but don't fail the response.
+  if (errorId && images.length > 0) {
+    images.forEach((img, idx) => {
+      try {
+        const ext = (img.mime || 'image/jpeg').split('/')[1] || 'jpg';
+        const key = `photos/${errorId}/triage-${String(idx+1).padStart(2,'0')}.${ext}`;
+        putObject(key, Buffer.from(img.b64, 'base64'), img.mime || 'image/jpeg')
+          .catch(e => console.warn('triage photo save failed', key, e.message));
+      } catch (e) { console.warn('triage photo prep failed', e.message); }
+    });
   }
 
   const sys = lang === 'DE'
