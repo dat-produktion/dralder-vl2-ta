@@ -44,45 +44,53 @@ export default async function handler(req, res) {
   const tsStr   = now.toISOString().replace('T', ' ').slice(0, 19);
 
   try {
-    const photoPaths = [];
-
-    // 1. Resolution photo  →  photos/<errorId>/fix.<ext>
+    // 1+2. All photo uploads in parallel — fix + fault images dispatched at once.
+    const photoTasks = [];
     if (resolutionImg && resolutionImg.b64) {
       const ext = (resolutionImg.mime || 'image/jpeg').split('/')[1] || 'jpg';
       const key = `photos/${errorId}/fix.${ext}`;
-      await putObject(key, Buffer.from(resolutionImg.b64, 'base64'), resolutionImg.mime || 'image/jpeg');
-      photoPaths.push({ role: 'fix', path: '/' + key });
+      photoTasks.push(
+        putObject(key, Buffer.from(resolutionImg.b64, 'base64'), resolutionImg.mime || 'image/jpeg')
+          .then(() => ({ role: 'fix', path: '/' + key }))
+          .catch(e => { console.warn('fix photo failed', key, e.message); return null; })
+      );
     }
-
-    // 2. Fault/diagnostic photos  →  photos/<errorId>/diag-<NN>.<ext>
-    //    (Best-effort idempotent — diagnose.js may have already saved them; overwrite is fine.)
     for (let i = 0; i < faultImages.length; i++) {
       const img = faultImages[i];
       if (!img || !img.b64) continue;
       const ext = (img.mime || 'image/jpeg').split('/')[1] || 'jpg';
       const key = `photos/${errorId}/diag-${String(i+1).padStart(2,'0')}.${ext}`;
-      await putObject(key, Buffer.from(img.b64, 'base64'), img.mime || 'image/jpeg');
-      photoPaths.push({ role: 'diag', path: '/' + key });
+      photoTasks.push(
+        putObject(key, Buffer.from(img.b64, 'base64'), img.mime || 'image/jpeg')
+          .then(() => ({ role: 'diag', path: '/' + key }))
+          .catch(e => { console.warn('diag photo failed', key, e.message); return null; })
+      );
     }
+    const photoPaths = (await Promise.all(photoTasks)).filter(Boolean);
 
     // 3. Build concise description (symptoms + clipped operator notes)
     const description = buildConciseDescription(symptoms, operatorNotes);
     const diagSummary = (diagnosis && (diagnosis.summary || (diagnosis.reply || '').slice(0, 160))) || '';
 
-    // 4. Append structured entry to STOERUNGEN_TS<NN>.md
+    // 4+5. Append to STOERUNGEN_TS<NN>.md and ANFRAGEN_LOG.md in parallel.
     const entry = formatStoerungEntry({
       errorId, dateStr, ssNum, status: 'SOLVED',
       description, diagSummary, resolution, lineState,
       turns, photoPaths, language
     });
     const stoerKey = `subsystems/STOERUNGEN_TS${ssNum}.md`;
-    const stoerCurrent = await getObjectText(stoerKey).catch(() => '');
-    await putObjectText(stoerKey, stoerCurrent + entry);
+    const logLine  = `\n## ${tsStr} | VL2.${ssNum} | ${errorId} | SOLVED — ${description.slice(0,120)} → ${resolution.slice(0,120)} | photos:${photoPaths.length} | turns:${turns} | ${language}`;
 
-    // 5. Append one-line summary to ANFRAGEN_LOG.md
-    const logLine = `\n## ${tsStr} | VL2.${ssNum} | ${errorId} | SOLVED — ${description.slice(0,120)} → ${resolution.slice(0,120)} | photos:${photoPaths.length} | turns:${turns} | ${language}`;
-    const logCurrent = await getObjectText('ANFRAGEN_LOG.md').catch(() => '');
-    await putObjectText('ANFRAGEN_LOG.md', logCurrent + logLine);
+    await Promise.all([
+      (async () => {
+        const cur = await getObjectText(stoerKey).catch(() => '');
+        await putObjectText(stoerKey, cur + entry);
+      })(),
+      (async () => {
+        const cur = await getObjectText('ANFRAGEN_LOG.md').catch(() => '');
+        await putObjectText('ANFRAGEN_LOG.md', cur + logLine);
+      })()
+    ]);
 
     return res.status(200).json({ ok: true, error_id: errorId, photos: photoPaths });
 

@@ -40,38 +40,45 @@ export default async function handler(req, res) {
   const tsStr   = now.toISOString().replace('T', ' ').slice(0, 19);
 
   try {
-    // 1. Save any fault photos under photos/<errorId>/diag-<NN>.<ext>
-    const photoPaths = [];
+    // 1. Save any fault photos under photos/<errorId>/diag-<NN>.<ext> — in parallel
+    const photoTasks = [];
     for (let i = 0; i < faultImages.length; i++) {
       const img = faultImages[i];
       if (!img || !img.b64) continue;
       const ext = (img.mime || 'image/jpeg').split('/')[1] || 'jpg';
       const key = `photos/${errorId}/diag-${String(i+1).padStart(2,'0')}.${ext}`;
-      try {
-        await putObject(key, Buffer.from(img.b64, 'base64'), img.mime || 'image/jpeg');
-        photoPaths.push({ role: 'diag', path: '/' + key });
-      } catch (e) { console.warn('log photo save failed', key, e.message); }
+      photoTasks.push(
+        putObject(key, Buffer.from(img.b64, 'base64'), img.mime || 'image/jpeg')
+          .then(() => ({ role: 'diag', path: '/' + key }))
+          .catch(e => { console.warn('log photo save failed', key, e.message); return null; })
+      );
     }
+    const photoPaths = (await Promise.all(photoTasks)).filter(Boolean);
 
     // 2. Concise description from symptoms + operator notes
     const description = buildConciseDescription(symptoms, operatorNotes);
 
-    // 3. Append entry to STOERUNGEN_TS<NN>.md (only if subsystem known)
+    // 3+4. Append to STOERUNGEN_TS<NN>.md (if subsystem known) and ANFRAGEN_LOG.md in parallel.
+    const statusLabel = solved ? 'SOLVED' : (status === 'fix_not_reported' ? 'FIX NOT REPORTED' : 'UNSOLVED');
+    const logLine = `\n## ${tsStr} | VL2.${ssNum} | ${errorId} | ${statusLabel} — ${description.slice(0,140)} | photos:${photoPaths.length} | ${language}`;
+
+    const tasks = [];
     if (ssNum !== '00') {
       const entry = formatStoerungEntry({
         errorId, dateStr, ssNum, status,
         description, lineState, photoPaths, language
       });
       const stoerKey = `subsystems/STOERUNGEN_TS${ssNum}.md`;
-      const stoerCurrent = await getObjectText(stoerKey).catch(() => '');
-      await putObjectText(stoerKey, stoerCurrent + entry);
+      tasks.push((async () => {
+        const cur = await getObjectText(stoerKey).catch(() => '');
+        await putObjectText(stoerKey, cur + entry);
+      })());
     }
-
-    // 4. One-line summary in ANFRAGEN_LOG.md
-    const statusLabel = solved ? 'SOLVED' : (status === 'fix_not_reported' ? 'FIX NOT REPORTED' : 'UNSOLVED');
-    const logLine = `\n## ${tsStr} | VL2.${ssNum} | ${errorId} | ${statusLabel} — ${description.slice(0,140)} | photos:${photoPaths.length} | ${language}`;
-    const logCurrent = await getObjectText('ANFRAGEN_LOG.md').catch(() => '');
-    await putObjectText('ANFRAGEN_LOG.md', logCurrent + logLine);
+    tasks.push((async () => {
+      const cur = await getObjectText('ANFRAGEN_LOG.md').catch(() => '');
+      await putObjectText('ANFRAGEN_LOG.md', cur + logLine);
+    })());
+    await Promise.all(tasks);
 
     return res.status(200).json({ ok: true, error_id: errorId, photos: photoPaths });
 

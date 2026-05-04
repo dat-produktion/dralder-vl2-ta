@@ -1802,29 +1802,48 @@ async function confirmResolve(){
   };
 
   try {
-    // localStorage backup
+    // localStorage backup — always written first so nothing is lost if the network call fails.
     const key = 'vl2_resolved_' + activeBlock;
     const local = JSON.parse(localStorage.getItem(key) || '[]');
     local.push({date:payload.timestamp, symptoms:symptomList, resolution:payload.resolution});
     if(local.length > 100) local.shift();
     localStorage.setItem(key, JSON.stringify(local));
 
-    // Server append
-    await fetch(CONFIG.RESOLVE_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
+    // Server append with a 45s hard ceiling so the UI never hangs forever.
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 45000);
+    let serverOk = false;
+    try {
+      const r = await fetch(CONFIG.RESOLVE_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+        signal: ctrl.signal
+      });
+      serverOk = r.ok;
+      if(!r.ok){
+        let errText = '';
+        try { const ed = await r.json(); errText = ed.error || JSON.stringify(ed); } catch { errText = 'HTTP '+r.status; }
+        alert((lang==='DE'?'Serverfehler — lokal gesichert.':'Server error — saved locally.') + '\n\n' + errText);
+      }
+    } catch(e){
+      const aborted = e.name === 'AbortError';
+      alert((lang==='DE'?'Speicherfehler — lokal gesichert.':'Save error — saved locally.') + (aborted ? '\n\n'+(lang==='DE'?'Server-Antwort dauerte zu lang (Zeitlimit 45s).':'Server response took too long (45s timeout).') : '\n\n'+e.message));
+      console.error('resolve fetch failed', e);
+    } finally {
+      clearTimeout(tid);
+    }
 
     closeResolveModal();
-    resolutionRecorded = true;       // resolve succeeded — block the auto-log
+    resolutionRecorded = true;       // resolve attempt happened — block the auto-log either way
     clearErrorIdState();             // ready for the next fault
-    // Mark block resolved briefly, then close
-    const blockEl = document.querySelector(`.block[onclick*="'${activeBlock}'"]`);
-    if(blockEl) blockEl.classList.add('resolved');
+    if(serverOk){
+      const blockEl = document.querySelector(`.block[onclick*="'${activeBlock}'"]`);
+      if(blockEl) blockEl.classList.add('resolved');
+    }
     setTimeout(() => closePanel(), 600);
   } catch(e){
-    alert(lang==='DE'?'Speicherfehler — lokal gesichert':'Save error — saved locally');
+    alert(lang==='DE'?'Unerwarteter Fehler — lokal gesichert':'Unexpected error — saved locally');
     console.error(e);
     closeResolveModal();
   } finally {
