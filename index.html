@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="de" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dr. Alder — VL2 Technischer Agent v7.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --burg:#822633;--burg-d:#6b1f2a;--burg-l:#9b2f3d;
+    --red:#dc2626;--red-s:#fbeaea;
+    --cream:#f7f2e8;--cream-2:#efe9db;--white:#fff;
+    --cb:#e5dfd2;--cb2:#d8d1c0;
+    --tx:#2d2823;--tx2:#4a443d;--txd:#6b655c;--txf:#9a948b;
+    --green:#22c55e;--green-d:#16a34a;--green-s:#dcfce7;
+    --amber:#d97706;--amber-s:#fef3c7;
+    --blue:#2563eb;--blue-s:#dbeafe;
+    --grpA:#5b6da3;--grpB:#7d6a9c;--grpC:#a96477;--grpD:#b85c5c;--grpE:#a07246;--grpF:#5d8466;
+    --sh1:0 1px 2px rgba(45,40,35,.05);
+    --sh2:0 2px 6px rgba(45,40,35,.08);
+    --sh3:0 4px 12px rgba(45,40,35,.10);
+    --f:'Inter',-apple-system,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{background:var(--cream);color:var(--tx);font-family:var(--f);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+
+  .topbar{background:var(--burg);color:#fff;padding:0 18px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:var(--sh2);}
+  .logo{font-weight:800;font-size:16px;color:#fff;display:flex;align-items:baseline;gap:6px;}
+  .logo .ver{font-weight:400;font-size:10px;color:rgba(255,255,255,.65);}
+  .logo .line-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.5px;}
+  .topbar-right{display:flex;align-items:center;gap:8px;}
+  .lang-toggle{display:flex;background:var(--burg-d);border:1px solid rgba(255,255,255,.2);border-radius:6px;overflow:hidden;}
+  .lang-btn{background:transparent;border:none;color:rgba(255,255,255,.6);padding:5px 10px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;}
+  .lang-btn.active{background:var(--burg-l);color:#fff;}
+
+  .statusrow{background:var(--cream);border-bottom:1px solid var(--cb);padding:6px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px;}
+  .spills{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .spill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--tx2);}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot.g{background:var(--green);animation:pulse 2.4s ease-in-out infinite;}
+  .dot.a{background:var(--amber);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .clock{font-size:11px;color:var(--txf);font-variant-numeric:tabular-nums;}
+  .reset-btn{background:#fff;border:1px solid var(--cb2);color:var(--tx);padding:5px 12px;border-radius:5px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;}
+  .reset-btn:hover{background:var(--cream-2);color:var(--burg);}
+
+  .main{display:flex;height:calc(100vh - 52px - 37px);min-height:580px;}
+  .left-panel{flex:1;padding:14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;min-width:0;}
+
+  .card{background:var(--white);border:1px solid var(--cb);border-radius:10px;box-shadow:var(--sh1);}
+  .card-hd{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;color:var(--burg);margin-bottom:3px;}
+  .card-sub{font-size:11px;color:var(--txd);margin-bottom:12px;}
+  .triage-card{padding:14px;border-left:4px solid var(--burg);}
+  .schema-card{padding:14px;}
+
+  .triage-row{display:flex;gap:8px;align-items:flex-start;}
+  .triage-text-col{flex:1;display:flex;flex-direction:column;gap:7px;}
+  .fault-notes{background:#fff;border:1.5px solid var(--cb2);color:var(--tx);padding:8px 10px;border-radius:6px;font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;min-height:60px;outline:none;width:100%;}
+  .fault-notes:focus{border-color:var(--burg);box-shadow:0 0 0 3px rgba(130,38,51,.1);}
+  .fault-notes::placeholder{color:var(--txf);}
+
+  .voice-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
+  .mic-btn{width:52px;height:52px;border-radius:50%;background:var(--burg);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh2);flex-shrink:0;}
+  .mic-btn:hover{background:var(--burg-d);}
+  .mic-btn.recording{background:var(--red);animation:rec-pulse 1s ease-in-out infinite;}
+  @keyframes rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}50%{box-shadow:0 0 0 8px rgba(220,38,38,0)}}
+  .mic-label{font-size:9px;font-weight:600;color:var(--txf);letter-spacing:.5px;text-transform:uppercase;text-align:center;max-width:60px;line-height:1.2;}
+
+  .upload-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+  .upload-zone{border:1.5px dashed var(--cb2);background:#fafaf5;border-radius:7px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;position:relative;flex:1;min-width:120px;}
+  .upload-zone:hover{border-color:var(--burg-l);background:#fff5ed;}
+  .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .upload-icon{font-size:20px;opacity:.6;}
+  .upload-text{font-size:11px;font-weight:600;color:var(--tx2);}
+  .upload-sub{font-size:10px;color:var(--txf);}
+  .image-previews{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .preview-item{position:relative;width:60px;height:60px;flex-shrink:0;}
+  .preview-item img{width:100%;height:100%;object-fit:cover;border:1.5px solid var(--cb2);border-radius:5px;}
+  .preview-remove{position:absolute;top:-5px;right:-5px;background:var(--red);border:2px solid #fff;color:#fff;width:16px;height:16px;border-radius:50%;font-size:8px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+  .triage-results{margin-top:10px;display:flex;flex-direction:column;gap:8px;}
+  .triage-results-hd{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--burg);text-transform:uppercase;letter-spacing:.5px;}
+  .conf-pill{font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;text-transform:uppercase;}
+  .conf-h{background:var(--green-s);color:var(--green-d);}
+  .conf-m{background:var(--amber-s);color:var(--amber);}
+  .conf-l{background:var(--red-s);color:var(--red);}
+  .triage-candidate{border:1px solid var(--cb);border-left:4px solid var(--cb2);border-radius:7px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:#fff;}
+  .triage-candidate.top{border-left-color:var(--red);}
+  .triage-cand-hd{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .ss-badge{background:var(--burg);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.5px;}
+  .ss-name{font-size:12px;font-weight:700;}
+  .rank-pill{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;}
+  .rank-top{background:var(--red-s);color:var(--red);}
+  .rank-also{background:var(--cream-2);color:var(--txf);}
+  .triage-reasoning{font-size:11px;color:var(--tx2);line-height:1.4;}
+  .investigate-btn{background:var(--burg);color:#fff;border:none;padding:7px 12px;border-radius:6px;font-family:inherit;font-weight:700;font-size:11px;cursor:pointer;align-self:flex-start;}
+  .triage-clarify{background:var(--amber-s);border:1px dashed var(--amber);border-radius:6px;padding:8px 10px;margin-top:2px;}
+  .triage-clarify-hd{font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+  .triage-clarify-q{font-size:11px;color:var(--tx2);padding:2px 0 2px 10px;position:relative;}
+  .triage-clarify-q::before{content:'?';position:absolute;left:0;color:var(--amber);font-weight:700;}
+  .triage-loading{color:var(--burg);font-size:11px;display:flex;align-items:center;gap:7px;padding:6px 0;}
+
+  /* Group-banded block layout */
+  .group-section{margin-bottom:10px;}
+  .group-label{font-size:9px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:1.5px;padding:4px 8px;background:var(--cream-2);border-radius:4px;display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+  .group-label .group-marker{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+  .group-A .group-marker{background:var(--grpA);}
+  .group-B .group-marker{background:var(--grpB);}
+  .group-C .group-marker{background:var(--grpC);}
+  .group-D .group-marker{background:var(--grpD);}
+  .group-E .group-marker{background:var(--grpE);}
+  .group-F .group-marker{background:var(--grpF);}
+  .block-row{display:flex;align-items:center;gap:4px;}
+  .block-row.parallel{align-items:stretch;}
+  .parallel-col{flex:1;display:flex;flex-direction:column;gap:3px;}
+  .parallel-col-label{font-size:8px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:1px;padding-bottom:3px;text-align:center;}
+  .parallel-row{display:flex;align-items:center;gap:4px;}
+  .block{flex:1;cursor:pointer;position:relative;}
+  .block-box{width:100%;min-height:60px;background:var(--white);border:1.5px solid var(--cb2);border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 3px;position:relative;}
+  .block:hover .block-box{border-color:var(--burg-l);transform:translateY(-1px);box-shadow:var(--sh2);}
+  .block.active .block-box{border-color:var(--burg);border-width:2px;box-shadow:0 0 0 3px rgba(130,38,51,.12);}
+  .block.fault .block-box{border-color:var(--red);background:var(--red-s);animation:fp 1.6s ease-in-out infinite;}
+  @keyframes fp{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}50%{box-shadow:0 0 0 5px rgba(220,38,38,0)}}
+  .block.resolved .block-box{border-color:var(--green);background:var(--green-s);}
+  .block-num{position:absolute;top:2px;left:4px;font-size:8px;font-weight:700;color:var(--burg);}
+  .block-icon{font-size:15px;line-height:1;margin-top:6px;}
+  .block-label{font-size:9px;font-weight:700;color:var(--tx2);text-align:center;line-height:1.15;}
+  .block.active .block-label,.block.fault .block-label{color:var(--burg);}
+  .flow-arrow{color:var(--burg-l);font-size:11px;flex-shrink:0;margin-top:-9px;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;padding-top:10px;margin-top:10px;border-top:1px solid var(--cb);}
+  .leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--txd);}
+  .ldot{width:9px;height:9px;border-radius:50%;}
+
+  .detail-bar{background:#fff;border:1px solid var(--cb);border-radius:8px;padding:10px 14px;display:none;gap:18px;align-items:center;flex-wrap:wrap;box-shadow:var(--sh1);}
+  .detail-bar.visible{display:flex;}
+  .di{display:flex;flex-direction:column;gap:1px;}
+  .dk{font-size:9px;color:var(--txf);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+  .dv{font-size:13px;font-weight:700;color:var(--tx);}
+  .dv.known{color:var(--green-d);}
+  .dv.pend{color:var(--amber);}
+  .instr-bar{background:#fff;border:1px solid var(--cb);border-left:4px solid var(--burg);border-radius:7px;padding:10px 14px;font-size:12px;font-weight:500;color:var(--tx);display:flex;align-items:center;gap:7px;}
+
+  .detail-panel{width:420px;flex-shrink:0;background:var(--cream);border-left:1px solid var(--cb);display:flex;flex-direction:column;overflow:hidden;}
+  .panel-header{background:#fff;padding:12px 16px;border-bottom:1px solid var(--cb);display:flex;align-items:flex-start;justify-content:space-between;border-left:4px solid var(--burg);}
+  .ph-left{display:flex;flex-direction:column;gap:2px;}
+  .ph-id{font-size:9px;color:var(--burg);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+  .ph-name{font-size:15px;font-weight:700;color:var(--tx);}
+  .ph-machine{font-size:10px;color:var(--txd);margin-top:1px;}
+  .panel-close{background:#fff;border:1px solid var(--cb2);color:var(--txd);width:26px;height:26px;border-radius:5px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
+  .panel-close:hover{border-color:var(--red);color:var(--red);}
+  .panel-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;}
+
+  .step-tracker{display:flex;align-items:center;width:100%;background:#fff;border:1px solid var(--cb);border-radius:8px;padding:12px 10px;box-shadow:var(--sh1);}
+  .step{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;min-width:55px;}
+  .step-dot{width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid var(--cb2);color:var(--txf);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+  .step.active .step-dot{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 0 0 4px rgba(34,197,94,.18);}
+  .step.done .step-dot{background:var(--green);border-color:var(--green);color:#fff;}
+  .step-label{font-size:9px;font-weight:600;color:var(--txf);text-align:center;}
+  .step.active .step-label,.step.done .step-label{color:var(--tx2);}
+  .step-line{flex:1;height:2px;background:var(--cb2);margin:0 -2px;margin-bottom:15px;}
+  .step-line.done{background:var(--green);}
+
+  .section{background:#fff;border:1px solid var(--cb);border-radius:8px;padding:12px;box-shadow:var(--sh1);}
+  .sec-title{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--burg);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
+
+  .kb-card{background:#fff;border:1px solid var(--cb);border-left:4px solid var(--green);border-radius:7px;padding:10px 12px;}
+  .kb-card-title{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green-d);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+  .kb-item{font-size:11px;color:var(--tx2);display:flex;gap:5px;padding:2px 0;line-height:1.4;}
+  .kb-item::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;}
+  .kb-anomaly{background:var(--amber-s);border:1px dashed var(--amber);border-radius:5px;padding:6px 8px;font-size:10px;color:var(--tx2);display:flex;gap:5px;margin-top:5px;line-height:1.4;}
+  .kb-anomaly::before{content:'⚠';color:var(--amber);font-weight:700;flex-shrink:0;}
+  .kb-critical{background:var(--red-s);border:1.5px solid var(--red);border-radius:5px;padding:6px 8px;font-size:10px;color:var(--tx);font-weight:500;display:flex;gap:5px;margin-top:5px;line-height:1.4;}
+  .kb-critical::before{content:'⚠';color:var(--red);font-weight:700;flex-shrink:0;}
+
+  .symptom-grid{display:flex;flex-direction:column;gap:5px;}
+  .sym-section-label{font-size:9px;font-weight:700;color:var(--burg);letter-spacing:1px;text-transform:uppercase;margin-top:5px;margin-bottom:2px;display:flex;align-items:center;gap:5px;}
+  .sym-section-label.first{margin-top:0;}
+  .sym-section-label .badge{font-size:8px;background:var(--burg);color:#fff;padding:1px 5px;border-radius:3px;}
+  .sym-section-label .cpill{font-size:8px;color:var(--txf);background:var(--cream-2);padding:1px 5px;border-radius:3px;}
+  .symptom-btn{background:#fff;border:1.5px solid var(--cb);color:var(--tx2);padding:7px 10px;border-radius:6px;font-family:inherit;font-size:11px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:7px;line-height:1.35;}
+  .symptom-btn::before{content:'';width:12px;height:12px;border:1.5px solid var(--cb2);border-radius:3px;background:#fff;flex-shrink:0;margin-top:1px;display:inline-block;}
+  .symptom-btn:hover{border-color:var(--burg-l);background:#fffaf5;}
+  .symptom-btn.selected{border-color:var(--burg);background:#fff5ed;color:var(--tx);}
+  .symptom-btn.selected::before{background:var(--burg);border-color:var(--burg);content:'✓';color:#fff;font-size:9px;font-weight:700;text-align:center;line-height:10px;}
+  .symptom-btn.ranked{border-left:3px solid var(--burg);background:linear-gradient(to right,#fff5ed 0%,#fff 10%);}
+  .symptom-btn.something-else{border-color:var(--amber);color:var(--amber);font-weight:600;}
+  .symptom-btn.something-else.selected{background:var(--amber-s);}
+  .se-prompt{display:none;background:var(--amber-s);border:1px dashed var(--amber);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--tx2);margin-top:5px;line-height:1.4;}
+  .se-prompt.visible{display:block;}
+  .photo-reminder{background:#eef6ff;border:1px solid #cfe3ff;border-radius:6px;padding:7px 10px;font-size:10px;color:var(--tx2);display:flex;gap:7px;align-items:flex-start;margin-top:5px;line-height:1.35;}
+  .photo-reminder::before{content:'📸';flex-shrink:0;font-size:13px;}
+
+  .toggle-group{display:flex;gap:7px;}
+  .toggle-btn{flex:1;padding:9px 10px;background:#fff;border:1.5px solid var(--cb2);color:var(--tx2);border-radius:7px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
+  .toggle-btn:hover{border-color:var(--burg-l);}
+  .toggle-btn.stopped{background:var(--red-s);border-color:var(--red);color:var(--red);}
+  .toggle-btn.running{background:var(--green-s);border-color:var(--green);color:var(--green-d);}
+
+  .response-box{background:#fff;border:1px solid var(--cb);border-left:4px solid var(--green);border-radius:7px;padding:12px;display:none;box-shadow:var(--sh1);}
+  .response-box.visible{display:block;}
+  .response-box.loading{border-left-color:var(--burg);}
+  .response-box.error{border-left-color:var(--red);}
+  .resp-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--cb);}
+  .resp-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:5px;}
+  .resp-label.ta{color:var(--green-d);}
+  .resp-label.loading{color:var(--burg);}
+  .resp-meta{font-size:9px;color:var(--txf);}
+  .loading-dots{display:inline-flex;gap:3px;align-items:center;}
+  .loading-dots span{width:4px;height:4px;background:var(--burg);border-radius:50%;animation:db 1.2s infinite ease-in-out;}
+  .loading-dots span:nth-child(2){animation-delay:.2s;}
+  .loading-dots span:nth-child(3){animation-delay:.4s;}
+  @keyframes db{0%,80%,100%{transform:scale(.5);opacity:.4}40%{transform:scale(1);opacity:1}}
+  .diag-section{margin-bottom:10px;}
+  .diag-heading{font-size:10px;color:var(--burg);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--cb);}
+  .diag-body{font-size:12px;line-height:1.5;color:var(--tx);}
+  .diag-body ul{padding-left:16px;margin-top:3px;}
+  .diag-body li{margin-bottom:2px;}
+  .sev-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 8px;border:1.5px solid;border-radius:4px;margin-bottom:8px;text-transform:uppercase;}
+  .sev-high{color:var(--red);border-color:var(--red);background:var(--red-s);}
+  .sev-med{color:var(--amber);border-color:var(--amber);background:var(--amber-s);}
+  .sev-low{color:var(--green-d);border-color:var(--green);background:var(--green-s);}
+
+  .followup-card{background:#fff;border:1px solid var(--cb);border-left:4px solid var(--blue);border-radius:7px;padding:12px;}
+  .followup-title{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
+  .followup-history{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:320px;overflow-y:auto;}
+  .turn{display:flex;flex-direction:column;gap:3px;padding:8px;border-radius:6px;font-size:11px;line-height:1.45;}
+  .turn-ta{background:var(--blue-s);border-left:3px solid var(--blue);}
+  .turn-op{background:var(--cream-2);border-left:3px solid var(--burg);}
+  .turn-label{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
+  .turn-ta .turn-label{color:var(--blue);}
+  .turn-op .turn-label{color:var(--burg);}
+  .followup-input-wrap{display:flex;flex-direction:column;gap:7px;}
+  .followup-btn{background:var(--blue);color:#fff;border:none;padding:9px 12px;border-radius:6px;font-family:inherit;font-weight:700;font-size:11px;cursor:pointer;}
+  .followup-btn:hover{background:#1d4ed8;}
+  .followup-btn:disabled{background:var(--cb2);cursor:not-allowed;}
+
+  .resolve-overlay{position:fixed;inset:0;background:rgba(45,40,35,.65);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;}
+  .resolve-overlay.visible{display:flex;}
+  .resolve-modal{background:#fff;border-radius:10px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--sh3);}
+  .resolve-header{background:var(--green);color:#fff;padding:12px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;}
+  .resolve-header-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;}
+  .resolve-body{padding:16px;display:flex;flex-direction:column;gap:12px;}
+  .resolve-warning{background:var(--amber-s);border:1px solid var(--amber);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--tx2);display:flex;gap:7px;}
+  .resolve-warning::before{content:'⚠';color:var(--amber);font-weight:700;flex-shrink:0;}
+  .resolve-field-label{font-size:10px;font-weight:700;color:var(--burg);letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:5px;}
+  .resolve-field-label .req{color:var(--red);}
+  .resolve-actions{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--cb);background:var(--cream);border-radius:0 0 10px 10px;}
+
+  .panel-actions{padding:12px 16px;background:#fff;border-top:1px solid var(--cb);display:flex;flex-direction:column;gap:7px;flex-shrink:0;}
+  .btn-primary{background:var(--burg);color:#fff;border:none;padding:12px 16px;border-radius:7px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .btn-primary:hover{background:var(--burg-d);}
+  .btn-primary:disabled{background:var(--cb2);color:var(--txf);cursor:not-allowed;}
+  .btn-primary.loading-btn{background:var(--burg-l);}
+  .btn-primary.green{background:var(--green);}
+  .btn-primary.green:hover{background:var(--green-d);}
+  .btn-secondary{background:#fff;border:1.5px solid var(--cb2);color:var(--tx2);padding:8px 10px;border-radius:6px;font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:4px;}
+  .btn-secondary:hover{border-color:var(--burg-l);color:var(--burg);}
+  .btn-secondary.success{border-color:var(--green);color:var(--green-d);}
+  .btn-row{display:flex;gap:7px;}
+
+  .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px 20px;text-align:center;}
+  .empty-icon{font-size:42px;opacity:.25;}
+  .empty-title{font-size:15px;font-weight:700;color:var(--tx2);}
+  .empty-sub{font-size:11px;color:var(--txd);line-height:1.5;max-width:220px;}
+  .empty-arrow{font-size:10px;font-weight:600;color:var(--burg);letter-spacing:1px;animation:blink 2s infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+  ::-webkit-scrollbar{width:7px;height:7px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--cb2);border-radius:4px;}
+
+  @media(max-width:1000px){.detail-panel{width:360px;}}
+  @media(max-width:860px){.main{flex-direction:column;height:auto;}.detail-panel{width:100%;border-left:none;border-top:1px solid var(--cb);}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="logo">Dr. Alder <span class="ver">v7.1</span><span class="line-badge">VL2</span></div>
+    <div style="font-size:10px;color:rgba(255,255,255,.7);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;" id="taglineText">TECHNISCHER AGENT</div>
+  </div>
+  <div class="topbar-right">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="langDe" onclick="setLanguage('DE')"><span>🇩🇪</span>DE</button>
+      <button class="lang-btn" id="langEn" onclick="setLanguage('EN')"><span>🇬🇧</span>EN</button>
+    </div>
+    <button class="reset-btn" onclick="closePanel()" id="backBtn">← Zurück</button>
+  </div>
+</div>
+
+<div class="statusrow">
+  <div class="spills">
+    <div class="spill"><span class="dot g"></span><span id="statusLine">VL2 läuft — 40/50 cpm</span></div>
+    <div class="spill"><span class="dot g"></span><span id="statusKB">KB v7.1 — 20 Subsysteme</span></div>
+    <div class="spill"><span class="dot a"></span><span id="statusApi">TA bereit</span></div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+  <button class="reset-btn" onclick="closePanel()" id="resetDiagBtn">Zurücksetzen</button>
+</div>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="card triage-card">
+      <div class="card-hd"><span>🔎</span><span id="triageTitle">Schnell-Triage</span></div>
+      <div class="card-sub" id="triageSub">Welches Subsystem? Beschreiben, fotografieren oder direkt sprechen.</div>
+      <div class="triage-row">
+        <div class="triage-text-col">
+          <textarea class="fault-notes" id="triageNotes" placeholder="Was sehen, hören oder bemerken Sie?"></textarea>
+          <div class="upload-row">
+            <div class="upload-zone">
+              <input type="file" id="triageImageInput" accept="image/*" capture="environment" multiple onchange="handleTriageImages(event)">
+              <div class="upload-icon">📷</div>
+              <div class="upload-text" id="triageUploadText">Foto aufnehmen oder hochladen</div>
+              <div class="upload-sub" id="triageUploadSub">Bis zu 10 — automatisch komprimiert</div>
+            </div>
+          </div>
+          <div class="image-previews" id="triageImagePreviews"></div>
+          <div id="triageError" style="color:var(--red);font-size:11px;display:none;"></div>
+          <div style="display:flex;gap:7px;">
+            <button class="btn-primary" id="triageBtn" onclick="runTriage()" style="flex:1;">🔍 <span id="triageBtnText">Triage starten</span></button>
+            <button class="btn-secondary" id="triageClearBtn" onclick="clearTriage()" style="display:none;flex:0 0 auto;">✕</button>
+          </div>
+        </div>
+        <div class="voice-col">
+          <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Voice input">🎤</button>
+          <div class="mic-label" id="micLabel">Tippen zum Sprechen</div>
+        </div>
+      </div>
+      <div id="triageResults"></div>
+    </div>
+
+    <div class="card schema-card">
+      <div class="card-hd"><span>🏭</span><span id="schemaTitle">VL2 — 20 Subsysteme</span></div>
+      <div class="card-sub" id="schemaSub">Block antippen zur Subsystemauswahl</div>
+      <div id="blockContainer"></div>
+      <div class="legend">
+        <div class="leg-item"><div class="ldot" style="background:var(--burg)"></div><span id="legKb">KB geladen</span></div>
+        <div class="leg-item"><div class="ldot" style="background:var(--red)"></div><span id="legFault">Aktiver Fehler</span></div>
+        <div class="leg-item"><div class="ldot" style="background:var(--green)"></div><span id="legResolved">Behoben</span></div>
+      </div>
+    </div>
+
+    <div class="detail-bar" id="detailBar">
+      <div class="di"><div class="dk" id="dkSub">Subsystem</div><div class="dv" id="dName">—</div></div>
+      <div class="di"><div class="dk" id="dkMfr">Hersteller</div><div class="dv" id="dMfr">—</div></div>
+      <div class="di"><div class="dk" id="dkModel">Modell</div><div class="dv" id="dModel">—</div></div>
+      <div class="di"><div class="dk" id="dkKb">KB</div><div class="dv" id="dKb">—</div></div>
+    </div>
+    <div class="instr-bar" id="instrBar"><span>👉</span><span id="instrText">Subsystem auswählen, um TA-Diagnose zu starten</span></div>
+  </div>
+
+  <div class="detail-panel">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🔧</div>
+      <div class="empty-title" id="emptyTitle">Kein Subsystem ausgewählt</div>
+      <div class="empty-sub" id="emptySub">Block antippen oder Schnell-Triage verwenden.</div>
+      <div class="empty-arrow" id="emptyArrow">◄◄ BLOCK WÄHLEN</div>
+    </div>
+
+    <div id="faultForm" style="display:none;flex-direction:column;height:100%;">
+      <div class="panel-header">
+        <div class="ph-left">
+          <div class="ph-id" id="phId">VL2.00</div>
+          <div class="ph-name" id="phName">Subsystem</div>
+          <div class="ph-machine" id="phMachine">—</div>
+        </div>
+        <button class="panel-close" onclick="closePanel()">✕</button>
+      </div>
+
+      <div class="panel-body">
+        <div class="step-tracker">
+          <div class="step active" id="step1"><div class="step-dot">1</div><div class="step-label" id="stepLabel1">Status</div></div>
+          <div class="step-line" id="line1"></div>
+          <div class="step" id="step2"><div class="step-dot">2</div><div class="step-label" id="stepLabel2">Symptome</div></div>
+          <div class="step-line" id="line2"></div>
+          <div class="step" id="step3"><div class="step-dot">3</div><div class="step-label" id="stepLabel3">Foto</div></div>
+          <div class="step-line" id="line3"></div>
+          <div class="step" id="step4"><div class="step-dot">4</div><div class="step-label" id="stepLabel4">Diagnose</div></div>
+        </div>
+
+        <div class="kb-card" id="kbCard" style="display:none;">
+          <div class="kb-card-title"><span>📚</span><span id="kbCardTitle">Knowledge Base</span></div>
+          <div id="kbComponents"></div>
+          <div id="kbAnomalies"></div>
+        </div>
+
+        <div class="section">
+          <div class="sec-title"><span>①</span><span id="sec1Title">Schritt 1 — Linienzustand</span></div>
+          <div class="toggle-group">
+            <button class="toggle-btn" id="btnStopped" onclick="setLS('stopped')">⬛ <span id="btnStoppedText">Gestoppt</span></button>
+            <button class="toggle-btn" id="btnRunning" onclick="setLS('running')">▶ <span id="btnRunningText">Läuft</span></button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-title"><span>②</span><span id="sec2Title">Schritt 2 — Symptome</span></div>
+          <div class="symptom-grid" id="symptomGrid"></div>
+          <div class="se-prompt" id="sePrompt">
+            <strong id="sePromptTitle">Problem unten beschreiben</strong><br>
+            <span id="sePromptBody">Bedienernotizen verwenden. Mehr Details + klares Foto = bessere TA-Diagnose.</span>
+          </div>
+          <div class="photo-reminder"><span id="photoReminderText">Ein klares Foto ist das Nützlichste für den TA.</span></div>
+        </div>
+
+        <div class="section">
+          <div class="sec-title"><span>📝</span><span id="notesTitle">Bedienernotizen</span></div>
+          <textarea class="fault-notes" id="faultNotes" placeholder="Beschreiben Sie, was Sie sehen, hören oder bemerken…" oninput="updateSteps()"></textarea>
+        </div>
+
+        <div class="section">
+          <div class="sec-title"><span>③</span><span id="sec3Title">Schritt 3 — Foto</span></div>
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="imageInput" accept="image/*" capture="environment" multiple onchange="handleImages(event)">
+            <div class="upload-icon">📷</div>
+            <div class="upload-text" id="uploadText">Foto aufnehmen oder hochladen</div>
+            <div class="upload-sub" id="uploadSub">JPEG / PNG — bis zu 10, auto-komprimiert</div>
+          </div>
+          <div class="image-previews" id="imagePreviews"></div>
+        </div>
+
+        <div class="response-box" id="responseBox">
+          <div class="resp-hd">
+            <div class="resp-label ta" id="respLabel"><span>🤖</span>TA-Diagnose</div>
+            <div class="resp-meta">claude-sonnet-4 · 2-call KB</div>
+          </div>
+          <div id="responseText"></div>
+        </div>
+
+        <div class="followup-card" id="followupCard" style="display:none;">
+          <div class="followup-title"><span>💬</span><span id="followupTitleText">Diagnose fortsetzen</span></div>
+          <div class="followup-history" id="followupHistory"></div>
+          <div class="followup-input-wrap">
+            <textarea class="fault-notes" id="followupInput" placeholder="Was haben Sie gefunden? Was haben Sie versucht?" style="min-height:52px;"></textarea>
+            <button class="followup-btn" id="followupBtn" onclick="runFollowup()">💬 <span id="followupBtnText">Senden & Fortsetzen</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn-primary" id="diagnoseBtn" onclick="runDiagnosis()">🔍 <span id="diagnoseBtnText">TA-Diagnose starten</span></button>
+        <div class="btn-row">
+          <button class="btn-secondary success" onclick="openResolveModal()" id="resolveBtn">✓ <span id="resolveBtnText">Behoben</span></button>
+          <button class="btn-secondary" onclick="resetForm()" id="resetFormBtn">↺ <span id="resetFormBtnText">Zurücksetzen</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="resolve-overlay" id="resolveOverlay" onclick="if(event.target===this)closeResolveModal()">
+  <div class="resolve-modal">
+    <div class="resolve-header">
+      <div class="resolve-header-title">✓ <span id="resolveModalTitle">Als behoben markieren</span></div>
+      <button class="panel-close" onclick="closeResolveModal()">✕</button>
+    </div>
+    <div class="resolve-body">
+      <div class="resolve-warning" id="resolveWarning">Beide Felder erforderlich.</div>
+      <div>
+        <div class="resolve-field-label"><span id="resolveFixLabel">Was hat das Problem behoben?</span><span class="req"> *</span></div>
+        <textarea class="fault-notes" id="resolveFix" placeholder="Maßnahme beschreiben…" style="margin-top:5px;" oninput="updateResolveBtn()"></textarea>
+      </div>
+      <div>
+        <div class="resolve-field-label"><span id="resolvePhotoLabel">Foto der Reparatur</span><span class="req"> *</span></div>
+        <div class="upload-zone" id="resolveUploadZone" style="margin-top:5px;">
+          <input type="file" id="resolveImageInput" accept="image/*" capture="environment" onchange="handleResolveImage(event)">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text" id="resolvePhotoText">Foto aufnehmen oder hochladen</div>
+          <div class="upload-sub" id="resolvePhotoSub">Erforderlich — JPEG / PNG</div>
+        </div>
+        <div class="image-previews" id="resolveImagePreview"></div>
+      </div>
+    </div>
+    <div class="resolve-actions">
+      <button class="btn-secondary" onclick="closeResolveModal()" style="flex:1;" id="resolveCancelBtn">Abbrechen</button>
+      <button class="btn-primary green" id="resolveConfirmBtn" onclick="confirmResolve()" disabled style="flex:2;">✓ <span id="resolveConfirmText">Behebung bestätigen</span></button>
+    </div>
+  </div>
+</div>
+<script>
+// ============================================================================
+// VL2 Technischer Agent v7.1 — 20 Subsystems
+// Architecture: Vercel Functions + Hetzner Object Storage + Anthropic Claude
+// ============================================================================
+
+const CONFIG = {
+  CLARIFY_URL: '/api/clarify',
+  DIAGNOSE_URL: '/api/diagnose',
+  RESOLVE_URL: '/api/resolve',
+  WHISPER_URL: '/api/whisper',
+  RANKED_URL: '/api/ranked',
+  LOG_URL: '/api/log',
+  MAX_PHOTOS: 10,
+  COMPRESS_MAX_DIM: 1600,
+  COMPRESS_QUALITY: 0.85
+};
+
+// ============================================================================
+// SUBSYSTEM DEFINITIONS — 20 subsystems VL2.01 through VL2.20
+// ============================================================================
+const SS = {
+  '01': { icon:'📦', name_de:'Palettenladestation', name_en:'Pallet Loading',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'Heavy Duty Conveyor', group:'A',
+    components_de:['Schwerlastförderer','Stoppgatter','Palettensensor'],
+    components_en:['Heavy duty conveyor','Stop gate','Pallet sensor'],
+    anomalies_de:['Manueller Wartungsbedarf — auf KB-Aufbau wartend'],
+    anomalies_en:['Pending KB buildout — manual review needed'],
+    symptoms_de:['Palette schiebt nicht vor','Sensor reagiert nicht','Kein Anlauf nach Reset'],
+    symptoms_en:['Pallet not advancing','Sensor unresponsive','No start after reset'] },
+
+  '02': { icon:'🏗️', name_de:'Palettenförderer', name_en:'Pallet Feed Conveyor',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'Heavy Duty Conveyor', group:'A',
+    components_de:['Schwerlastförderer','Indexierungssensor','Antriebsmotor'],
+    components_en:['Heavy duty conveyor','Indexing sensor','Drive motor'],
+    anomalies_de:['Linsen der Indexierungssensoren verschmutzen — bei Fehlsignalen zuerst reinigen'],
+    anomalies_en:['Indexing sensor lens contamination — clean first on false signals'],
+    symptoms_de:['Palette stoppt nicht in Position','Roboter sagt „warte auf Palette"','Sensor verschmutzt vermutet'],
+    symptoms_en:['Pallet not stopping in position','Robot says "waiting for pallet"','Sensor suspected dirty'] },
+
+  '03': { icon:'🦾', name_de:'Entladeroboter', name_en:'Unloading Robot',
+    manufacturer_de:'Fanuc', manufacturer_en:'Fanuc', model:'S-420 i W', group:'A',
+    components_de:['Fanuc S-420 i W Roboter','Vakuum-Lagengreifer','Siemens Sicherheits-SPS','Trennlagen (manuell)'],
+    components_en:['Fanuc S-420 i W robot','Vacuum layer gripper','Siemens safety PLC','Separator sheets (manual)'],
+    anomalies_de:['Schutzgitter vibriert während Bewegung','Vakuum-Sauger sind primärer Verschleißpunkt','Trennlagen werden manuell entnommen'],
+    anomalies_en:['Safety fence vibrates during movement','Vacuum cups are primary wear point','Separator sheets removed manually'],
+    symptoms_de:['Roboter greift Lage nicht auf','Roboter stoppt mitten in der Bewegung','Schutzgitter ausgelöst','Trennlage übersehen','Vakuumdruck niedrig'],
+    symptoms_en:['Robot fails to pick up layer','Robot stops mid-movement','Safety fence triggered','Separator sheet missed','Vacuum pressure low'] },
+
+  '04': { icon:'🔲', name_de:'Maschendrahtförderer', name_en:'Wiremesh Conveyor',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'Wiremesh Belt', group:'A',
+    components_de:['Maschendrahtband','Antriebsmotor','Übergabesensor'],
+    components_en:['Wiremesh belt','Drive motor','Handoff sensor'],
+    anomalies_de:['Fallausrichtung vom Greifer kritisch — Fehlausrichtung verursacht Kippen'],
+    anomalies_en:['Drop alignment from gripper critical — misalignment causes tipping'],
+    symptoms_de:['Dosen kippen beim Übergeben','Maschendraht stoppt','Rückstau am Drehtisch'],
+    symptoms_en:['Cans tipping at handoff','Wiremesh stopped','Backpressure at rotary table'] },
+
+  '05': { icon:'🔄', name_de:'Drehtisch', name_en:'Rotary Table',
+    manufacturer_de:'Unbekannt', manufacturer_en:'Unknown', model:'Rotary Table', group:'B',
+    components_de:['Drehtisch','Mittellager','Antriebsmotor'],
+    components_en:['Rotary table','Center bearing','Drive motor'],
+    anomalies_de:['Hersteller noch nicht bestätigt','Mittellager-Schmierung kritisch'],
+    anomalies_en:['Manufacturer not yet confirmed','Center bearing lubrication critical'],
+    symptoms_de:['Drehtisch dreht ungleichmäßig','Geräusch am Mittellager','Dosen stauen sich auf'],
+    symptoms_en:['Table rotating unevenly','Noise from center bearing','Cans backing up'] },
+
+  '06': { icon:'➰', name_de:'Vereinzeler', name_en:'Singulator',
+    manufacturer_de:'Unbekannt', manufacturer_en:'Unknown', model:'Disk + Air Jets', group:'B',
+    components_de:['Vereinzelungsscheibe','Luftdüsen','Auslaufrutsche (unter Drucker)'],
+    components_en:['Singulator disk','Air jets','Exit chute (under printer)'],
+    anomalies_de:['Rutsche verläuft UNTER Drucker DRU (07) — Druckerleckagen können Rutsche verschmutzen'],
+    anomalies_en:['Chute passes UNDER DRU (07) printer — printer leaks can foul chute'],
+    symptoms_de:['Mehrere Dosen nebeneinander','Dose dreht sich auf Scheibe','Rutsche durch Tinte verunreinigt'],
+    symptoms_en:['Multiple cans side by side','Can spinning on disk','Chute contaminated by ink'] },
+
+  '07': { icon:'🖨️', name_de:'Drucker', name_en:'Printer',
+    manufacturer_de:'Videojet', manufacturer_en:'Videojet', model:'1880+', group:'C',
+    components_de:['Videojet 1880+ Drucker','Druckkopf','SmartCell-Tintenkartuschen','Triggersensor'],
+    components_en:['Videojet 1880+ printer','Print head','SmartCell ink cartridges','Trigger sensor'],
+    anomalies_de:['LEASING: Videojet-Service vor interner Eingriffe kontaktieren','Druckkopfverstopfung deutlich häufiger als Spezifikation'],
+    anomalies_en:['LEASED: contact Videojet service before internal intervention','Print head clogging much more frequent than spec'],
+    symptoms_de:['Druck unscharf oder fehlt','Druckkopf verstopft','Falsches Datum / Charge','Tinten- oder Make-up-Fehler'],
+    symptoms_en:['Print blurry or missing','Print head clogged','Wrong date / batch','Ink or makeup fault'] },
+
+  '08': { icon:'🔃', name_de:'Dosenwender', name_en:'Can Inverter',
+    manufacturer_de:'BMH', manufacturer_en:'BMH', model:'Bahn W2001', group:'C',
+    components_de:['BMH Bahn W2001 Wender','Eingangsbürste (nylon)','Ausgangsbürste (nylon)','Eingangssensor (orange)'],
+    components_en:['BMH Bahn W2001 inverter','Entry brush (nylon)','Exit brush (nylon)','Entry sensor (orange)'],
+    anomalies_de:['EINZELDREHUNG (180°) — Dosen treten Lasche-unten ein, treten Lasche-oben aus','Innerer Pfad NICHT sichtbar — Staus verursachen verborgenen Rückstau','Trockenbürste nur — keine Luft- oder Wasserreinigung'],
+    anomalies_en:['SINGLE FLIP (180°) — cans enter tab-down, exit tab-up','Internal path NOT visible — jams cause hidden backlog','Dry brush only — no air or water cleaning'],
+    symptoms_de:['Eingangssensor löst aus, kein sichtbarer Stau','Dosen falsch orientiert nach Wender','Bürste verschlissen oder schmutzig','Verborgener Stau im Innenpfad'],
+    symptoms_en:['Entry sensor trips, no visible jam','Cans wrong orientation after inverter','Brush worn or dirty','Hidden jam in internal path'] },
+
+  '09': { icon:'🏷️', name_de:'Etikettiermaschine', name_en:'Rotary Labeler',
+    manufacturer_de:'Langguth', manufacturer_en:'Langguth', model:'hotLAN 070201017-E', group:'C',
+    components_de:['Langguth hotLAN 070201017-E','Nordson Series 3100 Klebepistole (160-180°C)','Etikettenmagazin','Mitnehmerriemen','Anpressrolle','Auslaufbürste'],
+    components_en:['Langguth hotLAN 070201017-E','Nordson Series 3100 glue (160-180°C)','Label magazine','Carrier belts','Pressure roller','Exit wipe brush'],
+    anomalies_de:['#2 häufigster Fehler auf der Linie','BEDIENERURSACHE: deformierte Dosen (vorgeschaltet) — KEINE Etikettierer-Fehlfunktion'],
+    anomalies_en:['#2 most frequent fault on line','OPERATOR ROOT CAUSE: deformed cans (upstream) — NOT labeler malfunction'],
+    symptoms_de:['Etikett klebt nicht / blättert','Magazin leer Alarm','Klebetemperatur außerhalb Bereich','Etikett schief auf Dose','Deformierte Dose (vorgeschaltet)','Klebstoff-Düse verstopft'],
+    symptoms_en:['Label not sticking / peeling','Magazine empty alarm','Glue temperature out of range','Label crooked on can','Deformed can (upstream)','Glue nozzle clogged'] },
+
+  '10': { icon:'⏸️', name_de:'Aggregator', name_en:'Aggregator',
+    manufacturer_de:'ZVI', manufacturer_en:'ZVI', model:'3-Spalten-Akkumulator', group:'D',
+    components_de:['3-Spalten-Akkumulator','4× Photoelektrische Stagingsensoren','Pneumatische Stoppgatter','Modularband (grün)'],
+    components_en:['3-column accumulator','4× photoelectric staging sensors','Pneumatic stop gates','Modular green belt'],
+    anomalies_de:['Seitliches Spiel beobachtet — Führungsschienen ggf. zu weit eingestellt','Stoppgatter-Logik (Timer vs. Sensor): UNBESTÄTIGT'],
+    anomalies_en:['Side-to-side play observed — guide rails may be set too wide','Stop gate logic (timer vs sensor): UNCONFIRMED'],
+    symptoms_de:['Falsche Anzahl Dosen freigegeben','Spalten füllen sich ungleichmäßig','Dosen stehen schief im Akkumulator','Stoppgatter reagiert nicht'],
+    symptoms_en:['Wrong number of cans released','Columns filling unevenly','Cans skewed in accumulator','Stop gate not responding'] },
+
+  '11': { icon:'📦', name_de:'Trayverpacker', name_en:'Tray Packer',
+    manufacturer_de:'ZVI', manufacturer_en:'ZVI', model:'N1/012/PAC/001', group:'D',
+    components_de:['ZVI N1/012/PAC/001 Verpacker','Nordson ProBlue 7 Heißleim (160-180°C)','Vintek HMI (gemeinsam mit FOL/STU)','Vakuumsauger Pickup','Kartonblanken-Magazin','Beam Blocker Lichtvorhang'],
+    components_en:['ZVI N1/012/PAC/001 packer','Nordson ProBlue 7 hot melt (160-180°C)','Vintek HMI (shared with FOL/STU)','Vacuum cup pickup','Cardboard blank magazine','Beam Blocker light curtain'],
+    anomalies_de:['#1 HÄUFIGSTER FEHLER AUF DER LINIE','Beam Blocker bereits angepasst — weitere Änderungen erfordern Vintek/ZVI-Zugriff','Kartonlieferant extern — Zulieferwechsel kann Maßdrift verursachen'],
+    anomalies_en:['#1 MOST FREQUENT FAULT ON LINE','Beam Blocker already adjusted — further changes require Vintek/ZVI access','Cardboard supplier external — supplier change can introduce dimension drift'],
+    symptoms_de:['Karton nicht aufgenommen (Vakuum)','Tray schief oder schlecht gefaltet','Klebstoff fehlt oder zu kalt','Beam Blocker ausgelöst','Kartonmagazin leer','Vakuum-Sauger verschlissen'],
+    symptoms_en:['Cardboard not picked (vacuum)','Tray crooked or poorly folded','Glue missing or too cold','Beam Blocker tripped','Cardboard magazine empty','Vacuum cup worn'] },
+
+  '12': { icon:'🎞️', name_de:'Folienwickler', name_en:'Film Wrapper',
+    manufacturer_de:'ZVI', manufacturer_en:'ZVI', model:'Integriert (TRP/STU)', group:'D',
+    components_de:['Folienrolle (weiß, sichtbar)','Spannrollen','Pneumatischer Siegelbalken','Schneidklinge'],
+    components_en:['Film roll (white, visible)','Tensioning rollers','Pneumatic sealing bar','Cutting blade'],
+    anomalies_de:['#3 häufigster Fehler auf der Linie','SICHERHEIT: Folienabfallansammlung — bei jedem Rollenwechsel beseitigen','2-5 Rollenwechsel pro Schicht'],
+    anomalies_en:['#3 most frequent fault on line','SAFETY: waste film accumulation — clear at every roll change','2-5 roll changes per shift'],
+    symptoms_de:['Folie reißt unsauber','„Bird-Nesting" / Abfall stört Mechanismus','Folienrolle leer','Siegelbalken kalt oder defekt','Folienspannung locker'],
+    symptoms_en:['Film tearing unevenly','"Bird-nesting" / waste interfering','Film roll empty','Sealing bar cold or faulty','Film tension loose'] },
+
+  '13': { icon:'🔥', name_de:'Schrumpftunnel', name_en:'Shrink Tunnel',
+    manufacturer_de:'ZVI', manufacturer_en:'ZVI', model:'Integriert (TRP/FOL)', group:'D',
+    components_de:['Maschendraht-Edelstahlband','Konvektionsgebläse','Elektrische Heizelemente','Mehrzonen-Temperatursensoren','Abluftsystem'],
+    components_en:['Stainless steel mesh belt','Convection blowers','Electric heating elements','Multi-zone temp sensors','Exhaust system'],
+    anomalies_de:['HOCHSPANNUNG + HEISSE OBERFLÄCHE — LOTO ZWINGEND vor jedem Innenzugriff','Mehrere Betriebsparameter unbekannt — Herstelleranleitung ausstehend'],
+    anomalies_en:['HIGH VOLTAGE + HOT SURFACE — LOTO MANDATORY before any internal access','Multiple operational parameters unknown — OEM manual outstanding'],
+    symptoms_de:['Folie schrumpft nicht fest','Folie hat Brandlöcher','Tunnel zu kalt — Temperatur fällt ab','Bandstillstand mit Stau','Abluft schlecht'],
+    symptoms_en:['Film not shrinking tight','Film has burn holes','Tunnel too cold — temp dropping','Belt stopped with jam','Exhaust restricted'] },
+
+  '14': { icon:'🏷️', name_de:'Tray-Etikettierer', name_en:'Tray Labeler',
+    manufacturer_de:'Eidos', manufacturer_en:'Eidos', model:'Printess 4e (P4E05C)', group:'E',
+    components_de:['Eidos Printess 4e Etikettierer','Thermo-Druckkopf (300dpi, 500mm/s)','Tampon-Applikator (Druckluft 6 bar)','Kühlgebläse am Steigerförderer','Steigerförderer'],
+    components_en:['Eidos Printess 4e labeler','Thermal print head (300dpi, 500mm/s)','Tamp applicator (6 bar air)','Cooling fan on riser conveyor','Riser conveyor'],
+    anomalies_de:['⚠ KRITISCH: WACHSBAND geladen — RESINBAND erforderlich für Kunststoffschrumpffolie. AKTION ERFORDERLICH.','KEIN BARCODE-VERIFIKATIONSSCANNER','Kühlgebläse auf Steigerförderer KRITISCH'],
+    anomalies_en:['⚠ CRITICAL: WAX RIBBON loaded — RESIN required for plastic shrink film. ACTION REQUIRED.','NO BARCODE VERIFICATION SCANNER','Cooling fan on riser CRITICAL'],
+    symptoms_de:['Etikett haftet nicht / blättert ab','Druck verblasst / Wachs schmiert','Etikett schief oder versetzt','Tampon erreicht Tray nicht','Kühlgebläse defekt — Trays zu heiß','Druckluft niedrig'],
+    symptoms_en:['Label not adhering / peeling','Print fading / wax smearing','Label crooked or offset','Tamp not reaching tray','Cooling fan failed — trays too hot','Compressed air low'] },
+
+  '15': { icon:'🌀', name_de:'Schraubenheber', name_en:'Screw Elevator',
+    manufacturer_de:'Unbekannt', manufacturer_en:'Unknown', model:'Vertikalspirale', group:'E',
+    components_de:['Vertikale Schraubenspirale','Antriebsmotor + Getriebe','Wellenlager (oben + unten)'],
+    components_en:['Vertical screw spiral','Drive motor + gearbox','Shaft bearings (top + bottom)'],
+    anomalies_de:['Rückstau von Zuteiler (16) verursacht Stau am Heberausgang'],
+    anomalies_en:['Backpressure from ZUO (16) causes jam at elevator exit'],
+    symptoms_de:['Heber läuft nicht','Tray staut sich am Ausgang','Geräusch von Lager','Geschwindigkeit ungleichmäßig'],
+    symptoms_en:['Elevator not running','Tray jamming at exit','Noise from bearing','Speed uneven'] },
+
+  '16': { icon:'🔀', name_de:'Zuteilstation', name_en:'Allocation Station',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'Diverter (PAL3 / PAL2)', group:'E',
+    components_de:['Verteilförderer','Diverter-Mechanismus (pneumatisch)','Spursensoren','Tray-Anwesenheitssensor'],
+    components_en:['Distribution conveyor','Diverter mechanism (pneumatic)','Lane sensors','Tray-present sensor'],
+    anomalies_de:['EINZIGES Subsystem mit zwei parallelen nachgeschalteten Subsystemen','Zuteilungsstrategie (alternierend / fülle-eins-zuerst): [PENDING]'],
+    anomalies_en:['ONLY subsystem with two parallel downstream subsystems','Allocation strategy (alternating / fill-one-first): [PENDING]'],
+    symptoms_de:['Diverter aktuiert nicht','Eine Spur überfüllt','Trays werden falsch geleitet','Pneumatik niedrig'],
+    symptoms_en:['Diverter not actuating','One lane overfilled','Trays misrouted','Pneumatic low'] },
+
+  '17': { icon:'🏗️', name_de:'Palettierer 3', name_en:'Palletizer 3',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'PAL3 + Siemens HMI', group:'F',
+    components_de:['Schieberarm','Stopper','Lagenhalter','Absenkmechanismus','Lichtvorhang','Siemens HMI'],
+    components_en:['Pusher arm','Stopper','Layer holder','Lowering mechanism','Light curtain','Siemens HMI'],
+    anomalies_de:['Konstruktion unterscheidet sich von PAL2 — Komponenten NICHT austauschbar','6 Lagen pro Palette','Lagenmuster: [AUSSTEHEND]'],
+    anomalies_en:['Design differs from PAL2 — components NOT interchangeable','6 layers per pallet','Layer pattern: [OUTSTANDING]'],
+    symptoms_de:['Schieber arbeitet nicht','Lage falsch ausgerichtet','Sicherheits-Lichtvorhang ausgelöst','Absenkmechanismus blockiert','Palette voll, aber Zyklus startet nicht'],
+    symptoms_en:['Pusher not working','Layer misaligned','Safety light curtain tripped','Lowering mechanism stuck','Pallet full but cycle not starting'] },
+
+  '18': { icon:'📤', name_de:'Ausgang 3', name_en:'Exit 3',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'EX3 (gehört zu PAL3)', group:'F',
+    components_de:['Rollenförderer','Anwesenheits-/Freigabesensor','Sicherheitsbarriere'],
+    components_en:['Roller conveyor','Present/clear sensor','Safety barrier'],
+    anomalies_de:['Funktionell Teil von PAL3 (17) — Fehler meist PAL3-Steuerlogik'],
+    anomalies_en:['Functionally part of PAL3 (17) — faults usually PAL3 control logic'],
+    symptoms_de:['Volle Palette nicht freigegeben','Förderer läuft nicht','Sensor erkennt Palette nicht'],
+    symptoms_en:['Full pallet not releasing','Conveyor not running','Sensor not detecting pallet'] },
+
+  '19': { icon:'🏗️', name_de:'Palettierer 2', name_en:'Palletizer 2',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'PAL2 + Siemens HMI', group:'F',
+    components_de:['Schieberarm','Stopper','Lagenhalter','Absenkmechanismus','Lichtvorhang','Siemens HMI'],
+    components_en:['Pusher arm','Stopper','Layer holder','Lowering mechanism','Light curtain','Siemens HMI'],
+    anomalies_de:['Konstruktion unterscheidet sich von PAL3 — Komponenten NICHT austauschbar','6 Lagen pro Palette','Lagenmuster: [AUSSTEHEND]'],
+    anomalies_en:['Design differs from PAL3 — components NOT interchangeable','6 layers per pallet','Layer pattern: [OUTSTANDING]'],
+    symptoms_de:['Schieber arbeitet nicht','Lage falsch ausgerichtet','Sicherheits-Lichtvorhang ausgelöst','Absenkmechanismus blockiert','Palette voll, aber Zyklus startet nicht'],
+    symptoms_en:['Pusher not working','Layer misaligned','Safety light curtain tripped','Lowering mechanism stuck','Pallet full but cycle not starting'] },
+
+  '20': { icon:'📤', name_de:'Ausgang 2', name_en:'Exit 2',
+    manufacturer_de:'Eigenbau', manufacturer_en:'Custom', model:'EX2 (gehört zu PAL2)', group:'F',
+    components_de:['Rollenförderer','Anwesenheits-/Freigabesensor','Sicherheitsbarriere'],
+    components_en:['Roller conveyor','Present/clear sensor','Safety barrier'],
+    anomalies_de:['Funktionell Teil von PAL2 (19) — Fehler meist PAL2-Steuerlogik'],
+    anomalies_en:['Functionally part of PAL2 (19) — faults usually PAL2 control logic'],
+    symptoms_de:['Volle Palette nicht freigegeben','Förderer läuft nicht','Sensor erkennt Palette nicht'],
+    symptoms_en:['Full pallet not releasing','Conveyor not running','Sensor not detecting pallet'] }
+};
+
+// Subsystems that have rich KB content — show "KB loaded" indicator
+const KNOWN = ['03','07','08','09','10','11','12','13','14'];
+
+// Seed for ranked symptoms when /api/ranked is unavailable
+const SEED_FAULTS = {
+  '03': [
+    {symptom_de:'Roboter greift Lage nicht auf', symptom_en:'Robot fails to pick up layer', count:6},
+    {symptom_de:'Vakuumdruck niedrig', symptom_en:'Vacuum pressure low', count:3},
+    {symptom_de:'Schutzgitter ausgelöst', symptom_en:'Safety fence triggered', count:2}
+  ],
+  '11': [
+    {symptom_de:'Karton nicht aufgenommen (Vakuum)', symptom_en:'Cardboard not picked (vacuum)', count:8},
+    {symptom_de:'Beam Blocker ausgelöst', symptom_en:'Beam Blocker tripped', count:5},
+    {symptom_de:'Tray schief oder schlecht gefaltet', symptom_en:'Tray crooked or poorly folded', count:3}
+  ],
+  '09': [
+    {symptom_de:'Etikett klebt nicht / blättert', symptom_en:'Label not sticking / peeling', count:7},
+    {symptom_de:'Deformierte Dose (vorgeschaltet)', symptom_en:'Deformed can (upstream)', count:4},
+    {symptom_de:'Magazin leer Alarm', symptom_en:'Magazine empty alarm', count:2}
+  ]
+};
+
+// ============================================================================
+// LAYOUT — Group banded with parallel palletizers in Group F
+// ============================================================================
+const LAYOUT = [
+  { group:'A', label_de:'GRUPPE A — PALETTENZUFÜHRUNG', label_en:'GROUP A — PALLET INFEED',
+    blocks:['01','02','03','04'] },
+  { group:'B', label_de:'GRUPPE B — VEREINZELUNG', label_en:'GROUP B — SINGULATION',
+    blocks:['05','06'] },
+  { group:'C', label_de:'GRUPPE C — EINZELDOSEN-VERARBEITUNG', label_en:'GROUP C — SINGLE-FILE PROCESSING',
+    blocks:['07','08','09'] },
+  { group:'D', label_de:'GRUPPE D — ZVI INTEGRIERTE MASCHINE', label_en:'GROUP D — ZVI INTEGRATED MACHINE',
+    blocks:['10','11','12','13'] },
+  { group:'E', label_de:'GRUPPE E — TRAY-AUSGABE', label_en:'GROUP E — TRAY OUTPUT',
+    blocks:['14','15','16'] },
+  { group:'F', label_de:'GRUPPE F — PALETTIERUNG (PARALLEL)', label_en:'GROUP F — PALLETIZING (PARALLEL)',
+    parallel:true,
+    cols:[
+      { label_de:'PAL3 / EX3', label_en:'PAL3 / EX3', blocks:['17','18'] },
+      { label_de:'PAL2 / EX2', label_en:'PAL2 / EX2', blocks:['19','20'] }
+    ] }
+];
+
+// ============================================================================
+// I18N — German default; English on toggle
+// ============================================================================
+const I18N = {
+  DE: {
+    tagline:'TECHNISCHER AGENT', back:'← Zurück', reset:'Zurücksetzen',
+    statusKB:'KB v7.1 — 20 Subsysteme', statusApi:'TA bereit',
+    triageTitle:'Schnell-Triage', triageSub:'Welches Subsystem? Beschreiben, fotografieren oder direkt sprechen.',
+    triagePh:'Was sehen, hören oder bemerken Sie?',
+    triageBtn:'Triage starten', triageRunning:'TA analysiert…',
+    micLabel:'Tippen zum Sprechen', micRecording:'Aufnahme…', micProcessing:'Verarbeite…',
+    uploadText:'Foto aufnehmen oder hochladen', uploadSub:'Bis zu 10 — automatisch komprimiert',
+    schemaTitle:'VL2 — 20 Subsysteme', schemaSub:'Block antippen zur Subsystemauswahl',
+    legKb:'KB geladen', legFault:'Aktiver Fehler', legResolved:'Behoben',
+    dkSub:'Subsystem', dkMfr:'Hersteller', dkModel:'Modell', dkKb:'KB',
+    instr:'Subsystem auswählen, um TA-Diagnose zu starten',
+    emptyTitle:'Kein Subsystem ausgewählt', emptySub:'Block antippen oder Schnell-Triage verwenden.', emptyArrow:'◄◄ BLOCK WÄHLEN',
+    stepLabels:['Status','Symptome','Foto','Diagnose'],
+    sec1:'Schritt 1 — Linienzustand', stopped:'Gestoppt', running:'Läuft',
+    sec2:'Schritt 2 — Symptome', symTop:'Top-Symptome', symAll:'Alle Symptome', symSomething:'Anderes / Beschreiben',
+    sePromptTitle:'Problem unten beschreiben', sePromptBody:'Bedienernotizen verwenden. Mehr Details + klares Foto = bessere TA-Diagnose.',
+    photoReminder:'Ein klares Foto ist das Nützlichste für den TA.',
+    notesTitle:'Bedienernotizen', notesPh:'Beschreiben Sie, was Sie sehen, hören oder bemerken…',
+    sec3:'Schritt 3 — Foto', faultUploadSub:'JPEG / PNG — bis zu 10, auto-komprimiert',
+    diagBtn:'TA-Diagnose starten', diagRunning:'TA läuft…',
+    resolveBtn:'Behoben', resetForm:'Zurücksetzen',
+    respLabel:'TA-Diagnose', respLoading:'Analysiere…',
+    followupTitle:'Diagnose fortsetzen', followupPh:'Was haben Sie gefunden? Was haben Sie versucht?',
+    followupBtn:'Senden & Fortsetzen', followupSending:'Sende…',
+    resolveModalTitle:'Als behoben markieren', resolveWarning:'Beide Felder erforderlich.',
+    resolveFixLabel:'Was hat das Problem behoben?', resolveFixPh:'Maßnahme beschreiben…',
+    resolvePhotoLabel:'Foto der Reparatur', resolvePhotoSub:'Erforderlich — JPEG / PNG',
+    resolveCancel:'Abbrechen', resolveConfirm:'Behebung bestätigen', resolveSaving:'Speichere…',
+    kbCardTitle:'Knowledge Base', confH:'HOCH', confM:'MITTEL', confL:'NIEDRIG',
+    rankTop:'TOP', rankAlso:'ggf. auch', clarifyHd:'Klärungsfragen',
+    sevHigh:'HOHE PRIORITÄT', sevMed:'MITTEL', sevLow:'NIEDRIG',
+    diagH:{prob:'Wahrscheinliches Problem',cause:'Wahrscheinliche Ursache',action:'Empfohlene Maßnahme',safety:'Sicherheit',followup:'Nachfrage'},
+    statusLine:'VL2 läuft — 40/50 cpm',
+    voiceErrorMic:'Mikrofon nicht verfügbar', voiceErrorTrans:'Transkription fehlgeschlagen'
+  },
+  EN: {
+    tagline:'TECHNICAL AGENT', back:'← Back', reset:'Reset',
+    statusKB:'KB v7.1 — 20 subsystems', statusApi:'TA ready',
+    triageTitle:'Quick Triage', triageSub:'Which subsystem? Describe, photograph, or speak directly.',
+    triagePh:'What do you see, hear, or notice?',
+    triageBtn:'Run Triage', triageRunning:'TA analyzing…',
+    micLabel:'Tap to speak', micRecording:'Recording…', micProcessing:'Processing…',
+    uploadText:'Take or upload photo', uploadSub:'Up to 10 — auto-compressed',
+    schemaTitle:'VL2 — 20 subsystems', schemaSub:'Tap a block to select a subsystem',
+    legKb:'KB loaded', legFault:'Active fault', legResolved:'Resolved',
+    dkSub:'Subsystem', dkMfr:'Manufacturer', dkModel:'Model', dkKb:'KB',
+    instr:'Select a subsystem to begin TA diagnosis',
+    emptyTitle:'No subsystem selected', emptySub:'Tap a block or use Quick Triage.', emptyArrow:'◄◄ SELECT BLOCK',
+    stepLabels:['Status','Symptoms','Photo','Diagnose'],
+    sec1:'Step 1 — Line State', stopped:'Stopped', running:'Running',
+    sec2:'Step 2 — Symptoms', symTop:'Top Symptoms', symAll:'All Symptoms', symSomething:'Something else / describe',
+    sePromptTitle:'Describe the issue below', sePromptBody:'Use operator notes. More detail + clear photo = better TA diagnosis.',
+    photoReminder:'A clear photo is the single most useful thing for the TA.',
+    notesTitle:'Operator Notes', notesPh:'Describe what you see, hear, or notice…',
+    sec3:'Step 3 — Photo', faultUploadSub:'JPEG / PNG — up to 10, auto-compressed',
+    diagBtn:'Run TA Diagnosis', diagRunning:'TA running…',
+    resolveBtn:'Resolve', resetForm:'Reset',
+    respLabel:'TA Diagnosis', respLoading:'Analyzing…',
+    followupTitle:'Continue Diagnosis', followupPh:'What did you find? What did you try?',
+    followupBtn:'Send & Continue', followupSending:'Sending…',
+    resolveModalTitle:'Mark as resolved', resolveWarning:'Both fields required.',
+    resolveFixLabel:'What fixed the problem?', resolveFixPh:'Describe the action…',
+    resolvePhotoLabel:'Repair photo', resolvePhotoSub:'Required — JPEG / PNG',
+    resolveCancel:'Cancel', resolveConfirm:'Confirm Resolution', resolveSaving:'Saving…',
+    kbCardTitle:'Knowledge Base', confH:'HIGH', confM:'MEDIUM', confL:'LOW',
+    rankTop:'TOP', rankAlso:'also possible', clarifyHd:'Clarifying Questions',
+    sevHigh:'HIGH PRIORITY', sevMed:'MEDIUM', sevLow:'LOW',
+    diagH:{prob:'Likely Problem',cause:'Likely Cause',action:'Recommended Action',safety:'Safety',followup:'Follow-up'},
+    statusLine:'VL2 running — 40/50 cpm',
+    voiceErrorMic:'Microphone not available', voiceErrorTrans:'Transcription failed'
+  }
+};
+
+// ============================================================================
+// STATE
+// ============================================================================
+let lang = 'DE';
+let activeBlock = null;
+let lineState = null;
+let selectedSymptoms = new Set();
+let uploadedImages = []; // {data, mime, name, b64}
+let triageImages = [];
+let resolveImage = null;
+let conversationTurns = []; // {role:'user'|'assistant', text}
+let lastDiagnosis = null;
+let voiceTarget = null; // 'triage' | 'fault' | 'followup' | 'resolve'
+let mediaRecorder = null;
+let audioChunks = [];
+
+// ============================================================================
+// LANGUAGE TOGGLE — fixes V7.0 bug where placeholders weren't refreshed
+// ============================================================================
+function setLanguage(L){
+  lang = L;
+  document.getElementById('htmlRoot').lang = L.toLowerCase();
+  document.getElementById('langDe').classList.toggle('active', L==='DE');
+  document.getElementById('langEn').classList.toggle('active', L==='EN');
+  applyLanguage();
+}
+
+function applyLanguage(){
+  const t = I18N[lang];
+  // Top bar
+  document.getElementById('taglineText').textContent = t.tagline;
+  document.getElementById('backBtn').textContent = t.back;
+  document.getElementById('resetDiagBtn').textContent = t.reset;
+  // Status row
+  document.getElementById('statusLine').textContent = t.statusLine;
+  document.getElementById('statusKB').textContent = t.statusKB;
+  document.getElementById('statusApi').textContent = t.statusApi;
+  // Triage card
+  document.getElementById('triageTitle').textContent = t.triageTitle;
+  document.getElementById('triageSub').textContent = t.triageSub;
+  document.getElementById('triageNotes').placeholder = t.triagePh;
+  document.getElementById('triageBtnText').textContent = t.triageBtn;
+  document.getElementById('triageUploadText').textContent = t.uploadText;
+  document.getElementById('triageUploadSub').textContent = t.uploadSub;
+  document.getElementById('micLabel').textContent = t.micLabel;
+  // Schema card
+  document.getElementById('schemaTitle').textContent = t.schemaTitle;
+  document.getElementById('schemaSub').textContent = t.schemaSub;
+  document.getElementById('legKb').textContent = t.legKb;
+  document.getElementById('legFault').textContent = t.legFault;
+  document.getElementById('legResolved').textContent = t.legResolved;
+  // Detail bar
+  document.getElementById('dkSub').textContent = t.dkSub;
+  document.getElementById('dkMfr').textContent = t.dkMfr;
+  document.getElementById('dkModel').textContent = t.dkModel;
+  document.getElementById('dkKb').textContent = t.dkKb;
+  document.getElementById('instrText').textContent = t.instr;
+  // Empty state
+  document.getElementById('emptyTitle').textContent = t.emptyTitle;
+  document.getElementById('emptySub').textContent = t.emptySub;
+  document.getElementById('emptyArrow').textContent = t.emptyArrow;
+  // Step tracker
+  document.getElementById('stepLabel1').textContent = t.stepLabels[0];
+  document.getElementById('stepLabel2').textContent = t.stepLabels[1];
+  document.getElementById('stepLabel3').textContent = t.stepLabels[2];
+  document.getElementById('stepLabel4').textContent = t.stepLabels[3];
+  // Sections
+  document.getElementById('sec1Title').textContent = t.sec1;
+  document.getElementById('btnStoppedText').textContent = t.stopped;
+  document.getElementById('btnRunningText').textContent = t.running;
+  document.getElementById('sec2Title').textContent = t.sec2;
+  document.getElementById('sePromptTitle').textContent = t.sePromptTitle;
+  document.getElementById('sePromptBody').textContent = t.sePromptBody;
+  document.getElementById('photoReminderText').textContent = t.photoReminder;
+  document.getElementById('notesTitle').textContent = t.notesTitle;
+  document.getElementById('faultNotes').placeholder = t.notesPh;
+  document.getElementById('sec3Title').textContent = t.sec3;
+  document.getElementById('uploadText').textContent = t.uploadText;
+  document.getElementById('uploadSub').textContent = t.faultUploadSub;
+  // Buttons
+  document.getElementById('diagnoseBtnText').textContent = t.diagBtn;
+  document.getElementById('resolveBtnText').textContent = t.resolveBtn;
+  document.getElementById('resetFormBtnText').textContent = t.resetForm;
+  document.getElementById('followupTitleText').textContent = t.followupTitle;
+  document.getElementById('followupInput').placeholder = t.followupPh;
+  document.getElementById('followupBtnText').textContent = t.followupBtn;
+  document.getElementById('respLabel').innerHTML = '<span>🤖</span>' + t.respLabel;
+  // Resolve modal
+  document.getElementById('resolveModalTitle').textContent = t.resolveModalTitle;
+  document.getElementById('resolveWarning').textContent = t.resolveWarning;
+  document.getElementById('resolveFixLabel').textContent = t.resolveFixLabel;
+  document.getElementById('resolveFix').placeholder = t.resolveFixPh;
+  document.getElementById('resolvePhotoLabel').textContent = t.resolvePhotoLabel;
+  document.getElementById('resolvePhotoText').textContent = t.uploadText;
+  document.getElementById('resolvePhotoSub').textContent = t.resolvePhotoSub;
+  document.getElementById('resolveCancelBtn').textContent = t.resolveCancel;
+  document.getElementById('resolveConfirmText').textContent = t.resolveConfirm;
+  document.getElementById('kbCardTitle').textContent = t.kbCardTitle;
+
+  // Re-render pieces that have language-dependent content
+  renderBlocks();
+  if(activeBlock) loadSubsystemPanel(activeBlock);
+  if(selectedSymptoms.size) renderSymptoms();
+}
+
+// ============================================================================
+// BLOCK SCHEMATIC RENDERING — group banded, parallel for Group F
+// ============================================================================
+function renderBlocks(){
+  const c = document.getElementById('blockContainer');
+  c.innerHTML = '';
+  LAYOUT.forEach(grp => {
+    const sec = document.createElement('div');
+    sec.className = 'group-section group-' + grp.group;
+    sec.innerHTML = `<div class="group-label"><span class="group-marker"></span>${lang==='DE'?grp.label_de:grp.label_en}</div>`;
+
+    if(grp.parallel){
+      const split = document.createElement('div');
+      split.className = 'block-row parallel';
+      grp.cols.forEach((col,ci) => {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'parallel-col';
+        const lbl = document.createElement('div');
+        lbl.className = 'parallel-col-label';
+        lbl.textContent = lang==='DE' ? col.label_de : col.label_en;
+        colDiv.appendChild(lbl);
+        const row = document.createElement('div');
+        row.className = 'parallel-row';
+        col.blocks.forEach((b,bi) => {
+          row.appendChild(buildBlock(b));
+          if(bi < col.blocks.length-1){
+            const a = document.createElement('span'); a.className='flow-arrow'; a.textContent='→';
+            row.appendChild(a);
+          }
+        });
+        colDiv.appendChild(row);
+        split.appendChild(colDiv);
+        if(ci < grp.cols.length-1){
+          const sep = document.createElement('span');
+          sep.className='flow-arrow'; sep.textContent=''; sep.style.alignSelf='center'; sep.style.padding='0 4px';
+          split.appendChild(sep);
+        }
+      });
+      sec.appendChild(split);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'block-row';
+      grp.blocks.forEach((b,bi) => {
+        row.appendChild(buildBlock(b));
+        if(bi < grp.blocks.length-1){
+          const a = document.createElement('span'); a.className='flow-arrow'; a.textContent='→';
+          row.appendChild(a);
+        }
+      });
+      sec.appendChild(row);
+    }
+    c.appendChild(sec);
+  });
+}
+
+function buildBlock(id){
+  const ss = SS[id];
+  const div = document.createElement('div');
+  div.className = 'block';
+  if(activeBlock === id) div.classList.add('active');
+  div.onclick = () => selectBlock(id);
+  div.innerHTML = `
+    <div class="block-box">
+      <div class="block-num">${id}</div>
+      <div class="block-icon">${ss.icon}</div>
+      <div class="block-label">${lang==='DE'?ss.name_de:ss.name_en}</div>
+    </div>`;
+  return div;
+}
+
+// ============================================================================
+// SUBSYSTEM SELECTION
+// ============================================================================
+function selectBlock(id){
+  activeBlock = id;
+  selectedSymptoms.clear();
+  uploadedImages = [];
+  conversationTurns = [];
+  lastDiagnosis = null;
+  lineState = null;
+  document.getElementById('faultNotes').value = '';
+  document.getElementById('imagePreviews').innerHTML = '';
+  document.getElementById('responseBox').classList.remove('visible');
+  document.getElementById('followupCard').style.display = 'none';
+  document.getElementById('btnStopped').classList.remove('stopped');
+  document.getElementById('btnRunning').classList.remove('running');
+  document.getElementById('sePrompt').classList.remove('visible');
+  loadSubsystemPanel(id);
+  renderBlocks();
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('faultForm').style.display = 'flex';
+  updateSteps();
+}
+
+function loadSubsystemPanel(id){
+  const ss = SS[id];
+  const t = I18N[lang];
+  // Header
+  document.getElementById('phId').textContent = 'VL2.'+id;
+  document.getElementById('phName').textContent = lang==='DE'?ss.name_de:ss.name_en;
+  document.getElementById('phMachine').textContent = (lang==='DE'?ss.manufacturer_de:ss.manufacturer_en) + ' — ' + ss.model;
+  // Detail bar
+  document.getElementById('detailBar').classList.add('visible');
+  document.getElementById('dName').textContent = (lang==='DE'?ss.name_de:ss.name_en) + ' (VL2.'+id+')';
+  document.getElementById('dMfr').textContent = lang==='DE'?ss.manufacturer_de:ss.manufacturer_en;
+  document.getElementById('dModel').textContent = ss.model;
+  const isKnown = KNOWN.includes(id);
+  const kbEl = document.getElementById('dKb');
+  kbEl.textContent = isKnown ? t.legKb : (lang==='DE'?'Teilweise':'Partial');
+  kbEl.className = 'dv ' + (isKnown ? 'known' : 'pend');
+  // KB card
+  if(isKnown){
+    document.getElementById('kbCard').style.display = 'block';
+    const comps = lang==='DE'?ss.components_de:ss.components_en;
+    const anoms = lang==='DE'?ss.anomalies_de:ss.anomalies_en;
+    document.getElementById('kbComponents').innerHTML = comps.map(c => `<div class="kb-item">${c}</div>`).join('');
+    document.getElementById('kbAnomalies').innerHTML = anoms.map(a => {
+      const isCrit = /CRITICAL|KRITISCH|⚠|LOTO|ZWINGEND|MANDATORY|HÄUFIGSTER|MOST FREQUENT/i.test(a);
+      return `<div class="${isCrit?'kb-critical':'kb-anomaly'}">${a}</div>`;
+    }).join('');
+  } else {
+    document.getElementById('kbCard').style.display = 'none';
+  }
+  // Symptoms
+  renderSymptoms();
+}
+
+// ============================================================================
+// SYMPTOMS — ranked + all + something-else
+// ============================================================================
+async function renderSymptoms(){
+  const id = activeBlock;
+  if(!id) return;
+  const ss = SS[id];
+  const t = I18N[lang];
+  const grid = document.getElementById('symptomGrid');
+  grid.innerHTML = '';
+  const allSymptoms = lang==='DE' ? ss.symptoms_de : ss.symptoms_en;
+
+  // Try to fetch ranked from /api/ranked, fallback to seed
+  let ranked = [];
+  try {
+    const r = await fetch(CONFIG.RANKED_URL+'?subsystem='+id, {method:'GET'});
+    if(r.ok){
+      const d = await r.json();
+      ranked = d.symptoms || [];
+    }
+  } catch(e){}
+  if(!ranked.length && SEED_FAULTS[id]) ranked = SEED_FAULTS[id];
+
+  if(ranked.length){
+    const lbl = document.createElement('div');
+    lbl.className = 'sym-section-label first';
+    lbl.innerHTML = `<span class="badge">${t.symTop}</span> <span class="cpill">${ranked.length}</span>`;
+    grid.appendChild(lbl);
+    ranked.slice(0,3).forEach((r,i) => {
+      const text = lang==='DE' ? r.symptom_de : r.symptom_en;
+      const btn = document.createElement('button');
+      btn.className = 'symptom-btn ranked';
+      btn.innerHTML = `<span style="flex:1;">${text}</span><span class="rank-pill ${i===0?'rank-top':'rank-also'}">${i===0?t.rankTop:t.rankAlso} (${r.count||1})</span>`;
+      btn.onclick = () => toggleSymptom(text, btn);
+      if(selectedSymptoms.has(text)) btn.classList.add('selected');
+      grid.appendChild(btn);
+    });
+  }
+
+  // All symptoms
+  const lbl2 = document.createElement('div');
+  lbl2.className = 'sym-section-label' + (ranked.length?'':' first');
+  lbl2.innerHTML = `<span class="badge">${t.symAll}</span>`;
+  grid.appendChild(lbl2);
+  allSymptoms.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'symptom-btn';
+    btn.textContent = s;
+    btn.onclick = () => toggleSymptom(s, btn);
+    if(selectedSymptoms.has(s)) btn.classList.add('selected');
+    grid.appendChild(btn);
+  });
+
+  // Something else
+  const seBtn = document.createElement('button');
+  seBtn.className = 'symptom-btn something-else';
+  seBtn.textContent = '+ ' + t.symSomething;
+  seBtn.onclick = () => {
+    const isOn = seBtn.classList.toggle('selected');
+    document.getElementById('sePrompt').classList.toggle('visible', isOn);
+    if(isOn){
+      selectedSymptoms.add('__SOMETHING_ELSE__');
+      document.getElementById('faultNotes').focus();
+    } else {
+      selectedSymptoms.delete('__SOMETHING_ELSE__');
+    }
+    updateSteps();
+  };
+  if(selectedSymptoms.has('__SOMETHING_ELSE__')){
+    seBtn.classList.add('selected');
+    document.getElementById('sePrompt').classList.add('visible');
+  }
+  grid.appendChild(seBtn);
+}
+
+function toggleSymptom(s, btn){
+  if(selectedSymptoms.has(s)){
+    selectedSymptoms.delete(s);
+    btn.classList.remove('selected');
+  } else {
+    selectedSymptoms.add(s);
+    btn.classList.add('selected');
+  }
+  updateSteps();
+}
+
+// ============================================================================
+// LINE STATE
+// ============================================================================
+function setLS(state){
+  lineState = state;
+  document.getElementById('btnStopped').classList.toggle('stopped', state==='stopped');
+  document.getElementById('btnRunning').classList.toggle('running', state==='running');
+  updateSteps();
+}
+
+// ============================================================================
+// IMAGE HANDLING — compress + base64
+// ============================================================================
+async function compressImage(file){
+  return new Promise((resolve,reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let {width,height} = img;
+        const max = CONFIG.COMPRESS_MAX_DIM;
+        if(width > max || height > max){
+          if(width > height){ height = Math.round(height * (max/width)); width = max; }
+          else { width = Math.round(width * (max/height)); height = max; }
+        }
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,width,height);
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => {
+          const r2 = new FileReader();
+          r2.onload = () => {
+            const b64 = r2.result.split(',')[1];
+            resolve({ data:r2.result, mime:'image/jpeg', name:file.name, b64, size:blob.size });
+          };
+          r2.readAsDataURL(blob);
+        }, 'image/jpeg', CONFIG.COMPRESS_QUALITY);
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleImages(event){
+  const files = Array.from(event.target.files);
+  for(const f of files){
+    if(uploadedImages.length >= CONFIG.MAX_PHOTOS) break;
+    try { uploadedImages.push(await compressImage(f)); } catch(e){ console.error(e); }
+  }
+  renderImagePreviews();
+  updateSteps();
+}
+
+async function handleTriageImages(event){
+  const files = Array.from(event.target.files);
+  for(const f of files){
+    if(triageImages.length >= CONFIG.MAX_PHOTOS) break;
+    try { triageImages.push(await compressImage(f)); } catch(e){ console.error(e); }
+  }
+  renderTriagePreviews();
+}
+
+async function handleResolveImage(event){
+  const f = event.target.files[0];
+  if(!f) return;
+  try { resolveImage = await compressImage(f); } catch(e){ console.error(e); }
+  renderResolvePreview();
+  updateResolveBtn();
+}
+
+function renderImagePreviews(){
+  const c = document.getElementById('imagePreviews');
+  c.innerHTML = '';
+  uploadedImages.forEach((img,i) => {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.innerHTML = `<img src="${img.data}"><button class="preview-remove" onclick="removeImage(${i})">✕</button>`;
+    c.appendChild(item);
+  });
+}
+
+function renderTriagePreviews(){
+  const c = document.getElementById('triageImagePreviews');
+  c.innerHTML = '';
+  triageImages.forEach((img,i) => {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.innerHTML = `<img src="${img.data}"><button class="preview-remove" onclick="removeTriageImage(${i})">✕</button>`;
+    c.appendChild(item);
+  });
+}
+
+function renderResolvePreview(){
+  const c = document.getElementById('resolveImagePreview');
+  c.innerHTML = '';
+  if(resolveImage){
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.innerHTML = `<img src="${resolveImage.data}"><button class="preview-remove" onclick="removeResolveImage()">✕</button>`;
+    c.appendChild(item);
+  }
+}
+
+function removeImage(i){ uploadedImages.splice(i,1); renderImagePreviews(); updateSteps(); }
+function removeTriageImage(i){ triageImages.splice(i,1); renderTriagePreviews(); }
+function removeResolveImage(){ resolveImage = null; renderResolvePreview(); updateResolveBtn(); }
+
+// ============================================================================
+// VOICE INPUT — Whisper API
+// ============================================================================
+async function toggleVoice(){
+  const btn = document.getElementById('micBtn');
+  const lbl = document.getElementById('micLabel');
+  const t = I18N[lang];
+  if(btn.classList.contains('recording')){
+    mediaRecorder.stop();
+    btn.classList.remove('recording');
+    lbl.textContent = t.micProcessing;
+  } else {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, {type:'audio/webm'});
+        await transcribeAudio(blob);
+        stream.getTracks().forEach(tr => tr.stop());
+      };
+      mediaRecorder.start();
+      btn.classList.add('recording');
+      lbl.textContent = t.micRecording;
+    } catch(e){
+      alert(t.voiceErrorMic);
+      console.error(e);
+    }
+  }
+}
+
+async function transcribeAudio(blob){
+  const t = I18N[lang];
+  const lbl = document.getElementById('micLabel');
+  try {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const b64 = reader.result.split(',')[1];
+      try {
+        const r = await fetch(CONFIG.WHISPER_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({audio_b64:b64, mime:'audio/webm', language: lang.toLowerCase()})
+        });
+        const d = await r.json();
+        if(d.text){
+          // Decide target — triage textarea is most common
+          const target = document.activeElement;
+          let elem = document.getElementById('triageNotes');
+          if(target && (target.id === 'faultNotes' || target.id === 'followupInput' || target.id === 'resolveFix')){
+            elem = target;
+          }
+          elem.value = (elem.value ? elem.value + ' ' : '') + d.text;
+          if(elem.id === 'faultNotes') updateSteps();
+        } else {
+          alert(t.voiceErrorTrans);
+        }
+      } catch(e){
+        alert(t.voiceErrorTrans);
+        console.error(e);
+      } finally {
+        lbl.textContent = t.micLabel;
+      }
+    };
+    reader.readAsDataURL(blob);
+  } catch(e){
+    lbl.textContent = t.micLabel;
+    console.error(e);
+  }
+}
+
+// ============================================================================
+// QUICK TRIAGE — calls /api/clarify (no subsystem yet)
+// ============================================================================
+async function runTriage(){
+  const t = I18N[lang];
+  const notes = document.getElementById('triageNotes').value.trim();
+  const errEl = document.getElementById('triageError');
+  errEl.style.display = 'none';
+  if(!notes && !triageImages.length){
+    errEl.textContent = lang==='DE' ? 'Bitte beschreiben oder fotografieren.' : 'Please describe or photograph.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('triageBtn');
+  const btnText = document.getElementById('triageBtnText');
+  btn.disabled = true;
+  btn.classList.add('loading-btn');
+  btnText.textContent = t.triageRunning;
+  const results = document.getElementById('triageResults');
+  results.innerHTML = `<div class="triage-loading"><div class="loading-dots"><span></span><span></span><span></span></div> ${t.triageRunning}</div>`;
+
+  try {
+    const r = await fetch(CONFIG.CLARIFY_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        mode:'triage',
+        operator_text: notes,
+        images: triageImages.map(i => ({b64:i.b64, mime:i.mime})),
+        language: lang
+      })
+    });
+    const d = await r.json();
+    renderTriageResults(d);
+  } catch(e){
+    results.innerHTML = `<div style="color:var(--red);font-size:11px;">${lang==='DE'?'Triage-Fehler':'Triage error'}: ${e.message}</div>`;
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading-btn');
+    btnText.textContent = t.triageBtn;
+    document.getElementById('triageClearBtn').style.display = 'inline-flex';
+  }
+}
+
+function renderTriageResults(d){
+  const t = I18N[lang];
+  const results = document.getElementById('triageResults');
+  results.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'triage-results';
+  const conf = (d.confidence || 'medium').toLowerCase();
+  const confCls = conf==='high'?'conf-h':(conf==='low'?'conf-l':'conf-m');
+  const confLabel = conf==='high'?t.confH:(conf==='low'?t.confL:t.confM);
+  wrap.innerHTML = `<div class="triage-results-hd"><span>${lang==='DE'?'TA-Triage':'TA Triage'}</span><span class="conf-pill ${confCls}">${confLabel}</span></div>`;
+
+  (d.candidates || []).forEach((c,i) => {
+    const ssId = c.subsystem ? c.subsystem.replace('VL2.','') : null;
+    const ss = ssId && SS[ssId];
+    if(!ss) return;
+    const cand = document.createElement('div');
+    cand.className = 'triage-candidate' + (i===0?' top':'');
+    cand.innerHTML = `
+      <div class="triage-cand-hd">
+        <span class="ss-badge">VL2.${ssId}</span>
+        <span class="ss-name">${lang==='DE'?ss.name_de:ss.name_en}</span>
+        <span class="rank-pill ${i===0?'rank-top':'rank-also'}">${i===0?t.rankTop:t.rankAlso}</span>
+      </div>
+      <div class="triage-reasoning">${c.reasoning || ''}</div>
+      <button class="investigate-btn" onclick="selectBlock('${ssId}')">${lang==='DE'?'Hier weiter →':'Continue here →'}</button>`;
+    wrap.appendChild(cand);
+  });
+
+  if(d.clarifying_questions && d.clarifying_questions.length){
+    const cl = document.createElement('div');
+    cl.className = 'triage-clarify';
+    cl.innerHTML = `<div class="triage-clarify-hd">${t.clarifyHd}</div>` +
+      d.clarifying_questions.map(q => `<div class="triage-clarify-q">${q}</div>`).join('');
+    wrap.appendChild(cl);
+  }
+  results.appendChild(wrap);
+}
+
+function clearTriage(){
+  document.getElementById('triageNotes').value = '';
+  triageImages = [];
+  renderTriagePreviews();
+  document.getElementById('triageResults').innerHTML = '';
+  document.getElementById('triageError').style.display = 'none';
+  document.getElementById('triageClearBtn').style.display = 'none';
+}
+
+// ============================================================================
+// DIAGNOSIS — two-call pattern: clarify → diagnose
+// ============================================================================
+async function runDiagnosis(){
+  const t = I18N[lang];
+  if(!activeBlock){ return; }
+  const symptomList = Array.from(selectedSymptoms).filter(s => s !== '__SOMETHING_ELSE__');
+  const notes = document.getElementById('faultNotes').value.trim();
+
+  if(!symptomList.length && !notes){
+    alert(lang==='DE'?'Bitte Symptom auswählen oder Notiz eingeben.':'Please select a symptom or enter notes.');
+    return;
+  }
+
+  const btn = document.getElementById('diagnoseBtn');
+  const btnText = document.getElementById('diagnoseBtnText');
+  btn.disabled = true;
+  btn.classList.add('loading-btn');
+  btnText.textContent = t.diagRunning;
+
+  const respBox = document.getElementById('responseBox');
+  const respText = document.getElementById('responseText');
+  respBox.classList.add('visible','loading');
+  respText.innerHTML = `<div class="triage-loading"><div class="loading-dots"><span></span><span></span><span></span></div> ${t.respLoading}</div>`;
+
+  try {
+    // Call 1: clarify — get filesNeeded
+    const clarifyResp = await fetch(CONFIG.CLARIFY_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        mode:'diagnose_prep',
+        subsystem: 'VL2.'+activeBlock,
+        line_state: lineState,
+        symptoms: symptomList,
+        operator_notes: notes,
+        language: lang
+      })
+    });
+    const clarifyData = await clarifyResp.json();
+
+    // Call 2: diagnose — pass filesNeeded
+    const diagResp = await fetch(CONFIG.DIAGNOSE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        subsystem: 'VL2.'+activeBlock,
+        line_state: lineState,
+        symptoms: symptomList,
+        operator_notes: notes,
+        images: uploadedImages.map(i => ({b64:i.b64, mime:i.mime})),
+        files_needed: clarifyData.filesNeeded || [],
+        language: lang
+      })
+    });
+    const diagData = await diagResp.json();
+    lastDiagnosis = diagData;
+    conversationTurns = [
+      { role:'user', text: `${symptomList.join(', ')}${notes?' — '+notes:''}` },
+      { role:'assistant', text: diagData.summary || JSON.stringify(diagData) }
+    ];
+    renderDiagnosis(diagData);
+    document.getElementById('followupCard').style.display = 'block';
+    renderFollowupHistory();
+    document.getElementById('step4').classList.add('done');
+  } catch(e){
+    respBox.classList.add('error');
+    respText.innerHTML = `<div style="color:var(--red);font-size:12px;">${lang==='DE'?'Diagnose-Fehler':'Diagnosis error'}: ${e.message}</div>`;
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading-btn');
+    btnText.textContent = t.diagBtn;
+    respBox.classList.remove('loading');
+  }
+}
+
+function renderDiagnosis(d){
+  const t = I18N[lang];
+  const respText = document.getElementById('responseText');
+  const sev = (d.severity || 'medium').toLowerCase();
+  const sevCls = sev==='high'?'sev-high':(sev==='low'?'sev-low':'sev-med');
+  const sevLabel = sev==='high'?t.sevHigh:(sev==='low'?t.sevLow:t.sevMed);
+  let html = `<span class="sev-badge ${sevCls}">${sevLabel}</span>`;
+  const sections = [
+    {key:'likely_problem', label:t.diagH.prob},
+    {key:'likely_cause', label:t.diagH.cause},
+    {key:'recommended_action', label:t.diagH.action},
+    {key:'safety_notes', label:t.diagH.safety},
+    {key:'followup', label:t.diagH.followup}
+  ];
+  sections.forEach(s => {
+    if(d[s.key]){
+      html += `<div class="diag-section"><div class="diag-heading">${s.label}</div><div class="diag-body">${formatText(d[s.key])}</div></div>`;
+    }
+  });
+  respText.innerHTML = html;
+}
+
+function formatText(text){
+  if(Array.isArray(text)){
+    return '<ul>' + text.map(t => `<li>${escapeHtml(t)}</li>`).join('') + '</ul>';
+  }
+  return escapeHtml(text).replace(/\n/g,'<br>');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================================
+// FOLLOWUP
+// ============================================================================
+async function runFollowup(){
+  const t = I18N[lang];
+  const input = document.getElementById('followupInput');
+  const text = input.value.trim();
+  if(!text) return;
+  conversationTurns.push({role:'user', text});
+  renderFollowupHistory();
+  input.value = '';
+  const btn = document.getElementById('followupBtn');
+  const btnText = document.getElementById('followupBtnText');
+  btn.disabled = true;
+  btnText.textContent = t.followupSending;
+
+  try {
+    const r = await fetch(CONFIG.DIAGNOSE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        subsystem: 'VL2.'+activeBlock,
+        line_state: lineState,
+        symptoms: Array.from(selectedSymptoms).filter(s => s !== '__SOMETHING_ELSE__'),
+        operator_notes: document.getElementById('faultNotes').value,
+        conversation_history: conversationTurns,
+        followup: true,
+        language: lang
+      })
+    });
+    const d = await r.json();
+    conversationTurns.push({role:'assistant', text: d.summary || JSON.stringify(d)});
+    renderFollowupHistory();
+    if(d.summary || d.likely_problem) lastDiagnosis = d;
+    renderDiagnosis(d);
+  } catch(e){
+    conversationTurns.push({role:'assistant', text:'Error: '+e.message});
+    renderFollowupHistory();
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = t.followupBtn;
+  }
+}
+
+function renderFollowupHistory(){
+  const h = document.getElementById('followupHistory');
+  const t = I18N[lang];
+  h.innerHTML = conversationTurns.map(turn => {
+    const cls = turn.role==='assistant' ? 'turn-ta' : 'turn-op';
+    const lbl = turn.role==='assistant' ? 'TA' : (lang==='DE'?'BEDIENER':'OPERATOR');
+    return `<div class="turn ${cls}"><div class="turn-label">${lbl}</div><div>${formatText(turn.text)}</div></div>`;
+  }).join('');
+  h.scrollTop = h.scrollHeight;
+}
+
+// ============================================================================
+// RESOLVE
+// ============================================================================
+function openResolveModal(){
+  document.getElementById('resolveOverlay').classList.add('visible');
+  updateResolveBtn();
+}
+
+function closeResolveModal(){
+  document.getElementById('resolveOverlay').classList.remove('visible');
+  document.getElementById('resolveFix').value = '';
+  resolveImage = null;
+  renderResolvePreview();
+}
+
+function updateResolveBtn(){
+  const fix = document.getElementById('resolveFix').value.trim();
+  const ok = fix.length > 0 && resolveImage;
+  document.getElementById('resolveConfirmBtn').disabled = !ok;
+}
+
+async function confirmResolve(){
+  const t = I18N[lang];
+  const btn = document.getElementById('resolveConfirmBtn');
+  const btnText = document.getElementById('resolveConfirmText');
+  btn.disabled = true;
+  btnText.textContent = t.resolveSaving;
+
+  const symptomList = Array.from(selectedSymptoms).filter(s => s !== '__SOMETHING_ELSE__');
+  const payload = {
+    subsystem: 'VL2.'+activeBlock,
+    line_state: lineState,
+    symptoms: symptomList,
+    operator_notes: document.getElementById('faultNotes').value,
+    diagnosis: lastDiagnosis,
+    resolution: document.getElementById('resolveFix').value,
+    resolution_image: resolveImage ? {b64:resolveImage.b64, mime:resolveImage.mime} : null,
+    fault_images: uploadedImages.map(i => ({b64:i.b64, mime:i.mime})),
+    conversation_turns: conversationTurns.length,
+    language: lang,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    // localStorage backup
+    const key = 'vl2_resolved_' + activeBlock;
+    const local = JSON.parse(localStorage.getItem(key) || '[]');
+    local.push({date:payload.timestamp, symptoms:symptomList, resolution:payload.resolution});
+    if(local.length > 100) local.shift();
+    localStorage.setItem(key, JSON.stringify(local));
+
+    // Server append
+    await fetch(CONFIG.RESOLVE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    closeResolveModal();
+    // Mark block resolved briefly, then close
+    const blockEl = document.querySelector(`.block[onclick*="'${activeBlock}'"]`);
+    if(blockEl) blockEl.classList.add('resolved');
+    setTimeout(() => closePanel(), 600);
+  } catch(e){
+    alert(lang==='DE'?'Speicherfehler — lokal gesichert':'Save error — saved locally');
+    console.error(e);
+    closeResolveModal();
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = t.resolveConfirm;
+  }
+}
+
+// ============================================================================
+// STEP TRACKER + MISC
+// ============================================================================
+function updateSteps(){
+  const has1 = !!lineState;
+  const has2 = selectedSymptoms.size > 0 || document.getElementById('faultNotes').value.trim().length > 5;
+  const has3 = uploadedImages.length > 0;
+  document.getElementById('step1').classList.toggle('done', has1);
+  document.getElementById('line1').classList.toggle('done', has1);
+  document.getElementById('step2').classList.toggle('active', has1 && !has2);
+  document.getElementById('step2').classList.toggle('done', has2);
+  document.getElementById('line2').classList.toggle('done', has2);
+  document.getElementById('step3').classList.toggle('active', has2 && !has3);
+  document.getElementById('step3').classList.toggle('done', has3);
+  document.getElementById('line3').classList.toggle('done', has3);
+  document.getElementById('step4').classList.toggle('active', has2);
+}
+
+function closePanel(){
+  activeBlock = null;
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('faultForm').style.display = 'none';
+  document.getElementById('detailBar').classList.remove('visible');
+  selectedSymptoms.clear();
+  uploadedImages = [];
+  conversationTurns = [];
+  lineState = null;
+  renderBlocks();
+}
+
+function resetForm(){
+  if(activeBlock){
+    selectedSymptoms.clear();
+    uploadedImages = [];
+    conversationTurns = [];
+    lineState = null;
+    document.getElementById('faultNotes').value = '';
+    document.getElementById('imagePreviews').innerHTML = '';
+    document.getElementById('responseBox').classList.remove('visible');
+    document.getElementById('followupCard').style.display = 'none';
+    document.getElementById('btnStopped').classList.remove('stopped');
+    document.getElementById('btnRunning').classList.remove('running');
+    document.getElementById('sePrompt').classList.remove('visible');
+    renderSymptoms();
+    updateSteps();
+  }
+}
+
+function tickClock(){
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(tickClock, 1000);
+
+// ============================================================================
+// INIT
+// ============================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  renderBlocks();
+  applyLanguage();
+  tickClock();
+});
+</script>
+</body>
+</html>

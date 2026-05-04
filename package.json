@@ -1,0 +1,12 @@
+{
+  "name": "dralder-line2-diagnostic",
+  "version": "7.0.0",
+  "description": "Technical Agent — Diagnostic Tool for Dr. Alder Tiernahrung GmbH, Line 2",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "form-data": "^4.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}
